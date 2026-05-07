@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+
+# Environment variables
+.env
+
+# Developer tools
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Poetry (opcional, mas recomendado não versionar neste estágio)
+poetry.lock
