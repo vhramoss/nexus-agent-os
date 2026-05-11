@@ -17,4 +17,7 @@ class AgentState:
     route: Optional[str] = None
     started_at: datetime | None = None
     finished_at: datetime | None = None
-
+    llm_output: Optional[str] = None
+    retries: int = 0
+    max_retries: int = 2
+    llm_failed:bool = False
