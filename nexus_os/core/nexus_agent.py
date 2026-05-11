@@ -2,7 +2,7 @@ from typing import Any, Dict
 from datetime import datetime, timezone
 
 from nexus_os.core.agent_state import AgentState, AgentStatus
-
+from nexus_os.core.graph.execution_graph import build_execution_graph
 
 class AgentResult:
     """
@@ -24,6 +24,24 @@ class NexusAgent:
     def __init__(self, agent_id: str):
         self.agent_id = agent_id
         self.state: AgentState | None = None
+
+
+    def _initialize_state(self, goal: str) -> None:
+        """
+        Inicializa o estado do agente.
+        """
+        self.state = AgentState(
+            goal=goal,
+            status=AgentStatus.RUNNING,
+            started_at=datetime.now(timezone.utc),
+        )
+
+        self.state.steps.append("Agent initialized")
+
+    def _execute(self) -> None:
+        graph = build_execution_graph()
+        graph.invoke(self.state)
+
 
     def run(self, goal: str) -> AgentResult:
         """
@@ -52,7 +70,7 @@ class NexusAgent:
         except Exception as e:
             assert self.state is not None
 
-            self.state.status = AgentStatus.FAILED
+            self.state.status = AgentStatus.ERROR
             self.state.finished_at = datetime.now(timezone.utc)
 
             return AgentResult(
@@ -63,19 +81,5 @@ class NexusAgent:
                 },
             )
 
-    def _initialize_state(self, goal: str) -> None:
-        """
-        Inicializa o estado do agente.
-        """
-        self.state = AgentState(
-            goal=goal,
-            status=AgentStatus.RUNNING,
-            started_at=datetime.now(timezone.utc),
-        )
 
-        self.state.steps.append("Agent initialized")
-
-    def _execute(self) -> None:
-
-        # Simulando um passo de execução
-        self.state.steps.append("Processing goal")
+     
