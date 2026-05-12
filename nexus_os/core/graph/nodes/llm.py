@@ -1,7 +1,9 @@
 from nexus_os.core.agent_state import AgentState
-
+from nexus_os.core.security.guarded import guarded
+from nexus_os.core.security.capabilities import Capability
 
 def llm_node(state: AgentState) -> AgentState:
+    llm_node = guarded(llm_node, Capability.USE_LLM)
     tracer = state.tracer
 
     with tracer.span("llm"):

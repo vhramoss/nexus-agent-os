@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
+from nexus_os.core.security.capabilities import CapabilitySet
 
 
 @dataclass
@@ -47,4 +48,7 @@ class AgentState:
     # -----------------
     tracer: Optional[Any] = None
     event_bus: Optional[Any] = None
+
+    #Security
+    capabilities: Optional[CapabilitySet] = None
 

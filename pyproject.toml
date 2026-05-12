@@ -17,6 +17,7 @@ dependencies = [
     "crewai (>=1.14.4,<2.0.0)",
     "sentence-transformers (>=5.4.1,<6.0.0)",
     "faiss-cpu (>=1.13.2,<2.0.0)",
+    "redis (>=7.4.0,<8.0.0)",
 ]
 
 

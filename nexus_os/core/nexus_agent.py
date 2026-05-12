@@ -8,6 +8,11 @@ import uuid
 from nexus_os.core.observability.event_bus import EventBus
 from nexus_os.core.observability.tracer import Tracer
 from nexus_os.core.observability.log_sink import print_event
+from nexus_os.core.observability.event_store import EventStore
+from nexus_os.core.security.agent_policy import DEFAULT_AGENT_POLICY
+from nexus_os.core.security.sandbox import enforce
+from nexus_os.core.security.capabilities import Capability
+
 
 
 class AgentResult:
@@ -28,6 +33,10 @@ class NexusAgent:
         self.trace_id = str(uuid.uuid4())
         self.tracer = Tracer(self.event_bus, trace_id=self.trace_id)
 
+        # Event store (persistência)
+        self.event_store = EventStore()
+
+
         # Log sinks (observability config)
         self.event_bus.subscribe("agent.started", print_event)
         self.event_bus.subscribe("node.started", print_event)
@@ -42,6 +51,11 @@ class NexusAgent:
         self.memory_store = MemoryStore()
         self.vector_store = VectorStore()
 
+
+        # Persistir TODOS os eventos
+        self.event_bus.subscribe("*", self.event_store.persist)
+
+
     # -----------------------------------------------------
     # Inicialização do estado
     # -----------------------------------------------------
@@ -50,8 +64,9 @@ class NexusAgent:
         self.state = AgentState(
             goal=goal,
             status="running",
-        )
+            )
 
+        self.state.capabilities = DEFAULT_AGENT_POLICY
         # Propagação de observability
         self.state.tracer = self.tracer
         self.state.event_bus = self.event_bus
@@ -86,6 +101,8 @@ class NexusAgent:
         self.state.status = "completed"
 
         # Persistência de memória
+        enforce(self.state.capabilities, Capability.WRITE_MEMORY)
+
         record = {
             "agent_id": self.agent_id,
             "goal": self.state.goal,
@@ -97,6 +114,7 @@ class NexusAgent:
         self.memory_store.save(record)
 
         if self.state.llm_output:
+            enforce(self.state.capabilities, Capability.WRITE_MEMORY)
             self.vector_store.add(
                 text=self.state.llm_output,
                 metadata={
