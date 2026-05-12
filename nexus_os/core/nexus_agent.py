@@ -1,7 +1,7 @@
 from typing import Any, Dict
 from datetime import datetime, timezone
 
-from nexus_os.core.agent_state import AgentState, AgentStatus
+from nexus_os.core.agent_state import AgentState
 from nexus_os.core.graph.execution_graph import build_execution_graph
 from nexus_os.core.memory.memory_store import MemoryStore
 from nexus_os.core.memory.vector_store import VectorStore
@@ -47,8 +47,7 @@ class NexusAgent:
     def _initialize_state(self, goal: str) -> None:
         self.state = AgentState(
             goal=goal,
-            status=AgentStatus.RUNNING,
-            started_at=datetime.now(timezone.utc),
+            status="running",
         )
 
         self.state.steps.append("Agent initialized")
@@ -79,8 +78,7 @@ class NexusAgent:
         assert self.state is not None
 
         # Finalização normal
-        self.state.status = AgentStatus.COMPLETED
-        self.state.finished_at = datetime.now(timezone.utc)
+        self.state.status = "completed"
 
         # -------------------------
         # Persistência de memória
@@ -92,8 +90,6 @@ class NexusAgent:
             "steps": self.state.steps,
             "output": self.state.llm_output,
             "status": self.state.status,
-            "started_at": self.state.started_at.isoformat(),
-            "finished_at": self.state.finished_at.isoformat(),
         }
 
         # Memória histórica (JSON)

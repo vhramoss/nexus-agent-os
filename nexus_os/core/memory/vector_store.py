@@ -1,36 +1,38 @@
 from sentence_transformers import SentenceTransformer
-import faiss
 import numpy as np
-from typing import List, Dict, Any
+import faiss
 
 
 class VectorStore:
-
     def __init__(self):
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
-        self.index = faiss.IndexFlatL2(384)  # Dimensão do embedding
-        self.documents: List[Dict[str, Any]] = []
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.index = None
+        self.texts = []
 
-    def add(self, text: str, metadata: Dict[str, Any]):
-        """
-        Adiciona um texto ao vetor store, gerando seu embedding e armazenando o documento.
-        """
+    def add(self, text: str, metadata: dict | None = None):
         embedding = self.model.encode([text])
+
+        if self.index is None:
+            self.index = faiss.IndexFlatL2(len(embedding[0]))
+
         self.index.add(np.array(embedding))
-        self.documents.append({
+        self.texts.append({
             "text": text,
-            "metadata": metadata,
+            "metadata": metadata or {}
         })
 
-        def search(self, query: str, k: int = 3):
-            if not self.documents:
-                return []
-            
-            embedding = self.model.encode([query])
-            distances, indices = self.index.search(np.array(embedding), k)
+    def search(self, query: str, k: int = 3):
+        if self.index is None or not self.texts:
+            return []
 
-            return [ 
-                self.documents[i]
-                for i in indices[0] 
-                if i < len(self.documents)
-            ]
+        query_embedding = self.model.encode([query])
+        distances, indices = self.index.search(
+            np.array(query_embedding),
+            k
+        )
+
+        return [
+            self.texts[i]
+            for i in indices[0]
+            if i < len(self.texts)
+        ]

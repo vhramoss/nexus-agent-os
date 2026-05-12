@@ -1,0 +1,21 @@
+[
+  {
+    "timestamp": "2026-05-12T15:37:02.558030+00:00",
+    "agent_id": "agent_1",
+    "goal": "string",
+    "steps": [
+      "Agent initialized",
+      "Graph: initialize",
+      "Recall memory",
+      "RAG recall",
+      "Decision: planning required",
+      "Planner agent",
+      "Planner failed (retry 1)",
+      "Planner agent",
+      "Planner failed (retry 2)",
+      "Global fallback executed"
+    ],
+    "output": null,
+    "status": "completed"
+  }
+]
