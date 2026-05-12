@@ -2,13 +2,16 @@ from nexus_os.core.agent_state import AgentState
 
 
 def reviewer_agent_node(state: AgentState) -> AgentState:
-    state.steps.append("Reviewer agent")
+    tracer = state.tracer
 
-    if "error" in (state.analysis or "").lower():
-        state.reviewer_failed = True
-        state.steps.append("Review failed")
-        return state
+    with tracer.span("reviewer"):
+        state.steps.append("Reviewer agent")
 
-    state.reviewer_failed = False
-    state.steps.append("Review passed")
+        if "error" in (state.analysis or "").lower():
+            state.reviewer_failed = True
+            state.steps.append("Review failed")
+        else:
+            state.reviewer_failed = False
+            state.steps.append("Review passed")
+
     return state

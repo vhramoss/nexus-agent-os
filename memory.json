@@ -17,5 +17,22 @@
     ],
     "output": null,
     "status": "completed"
+  },
+  {
+    "timestamp": "2026-05-12T16:20:45.370078+00:00",
+    "agent_id": "agent_1",
+    "goal": "string",
+    "steps": [
+      "Agent initialized",
+      "Graph: initialize",
+      "Recall memory",
+      "RAG recall",
+      "Decision: planning required",
+      "Planner agent",
+      "Planner agent",
+      "Global fallback executed"
+    ],
+    "output": null,
+    "status": "completed"
   }
 ]

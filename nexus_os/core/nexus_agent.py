@@ -1,42 +1,44 @@
 from typing import Any, Dict
-from datetime import datetime, timezone
-
 from nexus_os.core.agent_state import AgentState
 from nexus_os.core.graph.execution_graph import build_execution_graph
 from nexus_os.core.memory.memory_store import MemoryStore
 from nexus_os.core.memory.vector_store import VectorStore
 
+import uuid
+from nexus_os.core.observability.event_bus import EventBus
+from nexus_os.core.observability.tracer import Tracer
+from nexus_os.core.observability.log_sink import print_event
+
 
 class AgentResult:
-    """
-    Resultado final da execução de um agente.
-    """
-
     def __init__(self, output: str, metadata: Dict[str, Any]):
         self.output = output
         self.metadata = metadata
 
 
 class NexusAgent:
-    """
-    Núcleo do Nexus Agent OS.
-
-    Responsabilidades:
-    - Inicializar estado
-    - Executar o grafo
-    - Persistir memória
-    - Retornar resultado
-
-    NÃO decide fluxo.
-    NÃO faz retry.
-    NÃO trata fallback.
-    """
-
     def __init__(self, agent_id: str):
         self.agent_id = agent_id
         self.state: AgentState | None = None
 
-        # Memórias
+        # -----------------------------
+        # Observability
+        # -----------------------------
+        self.event_bus = EventBus()
+        self.trace_id = str(uuid.uuid4())
+        self.tracer = Tracer(self.event_bus, trace_id=self.trace_id)
+
+        # Log sinks (observability config)
+        self.event_bus.subscribe("agent.started", print_event)
+        self.event_bus.subscribe("node.started", print_event)
+        self.event_bus.subscribe("node.completed", print_event)
+        self.event_bus.subscribe("retry.triggered", print_event)
+        self.event_bus.subscribe("fallback.executed", print_event)
+        self.event_bus.subscribe("agent.completed", print_event)
+
+        # -----------------------------
+        # Memory systems
+        # -----------------------------
         self.memory_store = MemoryStore()
         self.vector_store = VectorStore()
 
@@ -50,6 +52,10 @@ class NexusAgent:
             status="running",
         )
 
+        # Propagação de observability
+        self.state.tracer = self.tracer
+        self.state.event_bus = self.event_bus
+
         self.state.steps.append("Agent initialized")
 
     # -----------------------------------------------------
@@ -58,32 +64,28 @@ class NexusAgent:
 
     def _execute(self) -> None:
         graph = build_execution_graph()
-        graph.invoke(self.state)
+        with self.tracer.span("graph.invoke"):
+            graph.invoke(self.state)
 
     # -----------------------------------------------------
     # Execução pública
     # -----------------------------------------------------
 
     def run(self, goal: str) -> AgentResult:
-        """
-        Executa o agente.
-
-        IMPORTANTE:
-        - Se o grafo terminou, a execução é considerada COMPLETED
-        - Retry e fallback são fluxo normal
-        """
         self._initialize_state(goal)
+
+        # Evento de início do agente
+        self.event_bus.publish(
+            "agent.started",
+            {"trace_id": self.trace_id, "goal": goal},
+        )
+
         self._execute()
 
         assert self.state is not None
-
-        # Finalização normal
         self.state.status = "completed"
 
-        # -------------------------
         # Persistência de memória
-        # -------------------------
-
         record = {
             "agent_id": self.agent_id,
             "goal": self.state.goal,
@@ -92,10 +94,8 @@ class NexusAgent:
             "status": self.state.status,
         }
 
-        # Memória histórica (JSON)
         self.memory_store.save(record)
 
-        # Memória semântica (vetorial)
         if self.state.llm_output:
             self.vector_store.add(
                 text=self.state.llm_output,
@@ -105,9 +105,10 @@ class NexusAgent:
                 },
             )
 
-        # -------------------------
-        # Resultado final
-        # -------------------------
+        self.event_bus.publish(
+            "agent.completed",
+            {"trace_id": self.trace_id, "status": self.state.status},
+        )
 
         return AgentResult(
             output=self.state.llm_output or "Execution completed with fallback",

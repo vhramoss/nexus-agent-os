@@ -1,21 +1,34 @@
-from nexus_os.core.graph.execution_graph import AgentState
+from nexus_os.core.agent_state import AgentState
+
 
 def planner_agent_node(state: AgentState) -> AgentState:
-    state.steps.append("Planner agent")
+    tracer = state.tracer
 
-    if state.planner_retries < state.max_retries:
-        state.planner_retries += 1
-        state.planner_failed = True
-        state.steps.append(f"Planner failed (retry {state.planner_retries})")
-        return state
+    with tracer.span("planner"):
+        state.steps.append("Planner agent")
 
-    state.planner_failed = False
-    state.plan = {
-        "steps": [
-            f"Analyze goal: {state.goal}",
-            "Decompose tasks",
-            "Prepare execution plan",
-        ]
-    }
-    state.steps.append("Planner succeeded")
+        if state.planner_retries < state.max_retries:
+            state.planner_retries += 1
+            state.planner_failed = True
+
+            tracer.event_bus.publish(
+                "retry.triggered",
+                {
+                    "trace_id": tracer.trace_id,
+                    "node": "planner",
+                    "attempt": state.planner_retries,
+                },
+            )
+
+            return state
+
+        state.planner_failed = False
+        state.plan = {
+            "steps": [
+                f"Analyze goal: {state.goal}",
+                "Decompose tasks",
+                "Prepare execution plan",
+            ]
+        }
+
     return state

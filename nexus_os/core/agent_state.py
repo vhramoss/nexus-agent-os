@@ -42,3 +42,9 @@ class AgentState:
     llm_output: Optional[str] = None
 
     context: Optional[str] = None
+    # -----------------
+    # Observability 
+    # -----------------
+    tracer: Optional[Any] = None
+    event_bus: Optional[Any] = None
+
