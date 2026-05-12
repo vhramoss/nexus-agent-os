@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 class AgentStatus(str, Enum):
@@ -21,3 +21,6 @@ class AgentState:
     retries: int = 0
     max_retries: int = 2
     llm_failed:bool = False
+    recall: List[Dict[str, Any]] = field(default_factory=list)
+    semantic_recall: list = field(default_factory=list)
+    

@@ -1,5 +1,15 @@
 from langgraph.graph import StateGraph, END
 from nexus_os.core.agent_state import AgentState
+from nexus_os.core.memory.memory_store import MemoryStore
+from nexus_os.core.memory.vector_store import VectorStore
+
+
+# =========================================================
+# Inicialização das memórias
+# =========================================================
+
+memory_store = MemoryStore()
+vector_store = VectorStore()
 
 
 # =========================================================
@@ -11,10 +21,58 @@ def initialize_node(state: AgentState) -> AgentState:
     return state
 
 
+# -------------------------
+# Recall estrutural (memória bruta)
+# -------------------------
+
+def recall_memory_node(state: AgentState) -> AgentState:
+    state.steps.append("Recall memory")
+
+    history = memory_store.load_all()
+
+    related = [
+        record for record in history
+        if record.get("goal") == state.goal
+    ]
+
+    state.recall = related[-3:]  # últimas 3 execuções
+    return state
+
+
+# -------------------------
+# RAG semântico (embeddings)
+# -------------------------
+
+def rag_recall_node(state: AgentState) -> AgentState:
+    state.steps.append("RAG recall")
+
+    results = vector_store.search(
+        query=state.goal,
+        k=3
+    )
+
+    state.semantic_recall = results
+    return state
+
+
+# -------------------------
+# Decisão
+# -------------------------
+
 def decision_node(state: AgentState) -> AgentState:
-    """
-    Decide o caminho do grafo com base no objetivo.
-    """
+    # Prioriza conhecimento semântico
+    if state.semantic_recall:
+        state.route = "simple"
+        state.steps.append("Decision: semantic recall hit")
+        return state
+
+    # Depois memória estrutural
+    if state.recall:
+        state.route = "simple"
+        state.steps.append("Decision: reused past knowledge")
+        return state
+
+    # Fallback heurístico
     if len(state.goal) < 30:
         state.route = "simple"
         state.steps.append("Decision: simple path")
@@ -24,6 +82,10 @@ def decision_node(state: AgentState) -> AgentState:
 
     return state
 
+
+# -------------------------
+# Processamento
+# -------------------------
 
 def simple_process_node(state: AgentState) -> AgentState:
     state.steps.append("Simple processing executed")
@@ -35,35 +97,39 @@ def complex_process_node(state: AgentState) -> AgentState:
     return state
 
 
-# =========================================================
-# LLM STUB com retry controlado (SEM exceção)
-# =========================================================
+# -------------------------
+# LLM STUB com retry (sem exceção)
+# -------------------------
 
 def llm_node(state: AgentState) -> AgentState:
     state.steps.append("LLM: attempt")
 
-    # Simula falha controlada
     if state.retries < state.max_retries:
         state.retries += 1
         state.llm_failed = True
         state.steps.append(f"LLM failed (retry {state.retries})")
         return state
 
-    # Sucesso após retries
+    # Sucesso
     state.llm_failed = False
-    state.llm_output = (
-        "[SIMULATED LLM RESPONSE]\n"
-        f"Objetivo: {state.goal}\n"
-        "Resposta gerada após retries."
-    )
-    state.steps.append("LLM succeeded")
 
+    semantic_context = "\n".join(
+        r["text"] for r in state.semantic_recall
+    ) if state.semantic_recall else ""
+
+    state.llm_output = (
+        "[SIMULATED RAG RESPONSE]\n\n"
+        f"Contexto recuperado:\n{semantic_context}\n\n"
+        f"Objetivo atual: {state.goal}"
+    )
+
+    state.steps.append("LLM succeeded")
     return state
 
 
-# =========================================================
-# Fallback (quando retries se esgotam)
-# =========================================================
+# -------------------------
+# Fallback final
+# -------------------------
 
 def fallback_node(state: AgentState) -> AgentState:
     state.steps.append("Fallback executed")
@@ -78,7 +144,7 @@ def fallback_node(state: AgentState) -> AgentState:
 
 
 # =========================================================
-# Construção do grafo com retry + fallback
+# Construção do grafo
 # =========================================================
 
 def build_execution_graph():
@@ -86,19 +152,23 @@ def build_execution_graph():
 
     # Registro dos nós
     graph.add_node("initialize", initialize_node)
+    graph.add_node("recall_memory", recall_memory_node)
+    graph.add_node("rag_recall", rag_recall_node)
     graph.add_node("decision", decision_node)
     graph.add_node("simple_process", simple_process_node)
     graph.add_node("complex_process", complex_process_node)
     graph.add_node("llm", llm_node)
     graph.add_node("fallback", fallback_node)
 
-    # Ponto de entrada
+    # Entrada
     graph.set_entry_point("initialize")
 
-    # Fluxo inicial
-    graph.add_edge("initialize", "decision")
+    # Cadeia de memória
+    graph.add_edge("initialize", "recall_memory")
+    graph.add_edge("recall_memory", "rag_recall")
+    graph.add_edge("rag_recall", "decision")
 
-    # Ramificação por tipo de tarefa
+    # Ramificação por decisão
     graph.add_conditional_edges(
         "decision",
         lambda state: state.route,
@@ -108,11 +178,11 @@ def build_execution_graph():
         },
     )
 
-    # Caminho até o LLM
+    # Execução
     graph.add_edge("simple_process", "llm")
     graph.add_edge("complex_process", "llm")
 
-    # Retry + fallback controlados pelo estado
+    # Retry + fallback
     graph.add_conditional_edges(
         "llm",
         lambda state: (
@@ -129,7 +199,6 @@ def build_execution_graph():
         },
     )
 
-    # Finalização
     graph.add_edge("fallback", END)
 
     return graph.compile()

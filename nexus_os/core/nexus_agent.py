@@ -3,6 +3,9 @@ from datetime import datetime, timezone
 
 from nexus_os.core.agent_state import AgentState, AgentStatus
 from nexus_os.core.graph.execution_graph import build_execution_graph
+from nexus_os.core.memory.memory_store import MemoryStore
+from nexus_os.core.memory.vector_store import VectorStore
+
 
 class AgentResult:
     """
@@ -18,18 +21,30 @@ class NexusAgent:
     """
     Núcleo do Nexus Agent OS.
 
-    Agente stateful com ciclo de vida explícito.
+    Responsabilidades:
+    - Inicializar estado
+    - Executar o grafo
+    - Persistir memória
+    - Retornar resultado
+
+    NÃO decide fluxo.
+    NÃO faz retry.
+    NÃO trata fallback.
     """
 
     def __init__(self, agent_id: str):
         self.agent_id = agent_id
         self.state: AgentState | None = None
 
+        # Memórias
+        self.memory_store = MemoryStore()
+        self.vector_store = VectorStore()
+
+    # -----------------------------------------------------
+    # Inicialização do estado
+    # -----------------------------------------------------
 
     def _initialize_state(self, goal: str) -> None:
-        """
-        Inicializa o estado do agente.
-        """
         self.state = AgentState(
             goal=goal,
             status=AgentStatus.RUNNING,
@@ -38,48 +53,71 @@ class NexusAgent:
 
         self.state.steps.append("Agent initialized")
 
+    # -----------------------------------------------------
+    # Execução do grafo
+    # -----------------------------------------------------
+
     def _execute(self) -> None:
         graph = build_execution_graph()
         graph.invoke(self.state)
 
+    # -----------------------------------------------------
+    # Execução pública
+    # -----------------------------------------------------
 
     def run(self, goal: str) -> AgentResult:
         """
-        Executa o agente respeitando o ciclo de vida.
+        Executa o agente.
+
+        IMPORTANTE:
+        - Se o grafo terminou, a execução é considerada COMPLETED
+        - Retry e fallback são fluxo normal
         """
         self._initialize_state(goal)
+        self._execute()
 
-        try:
-            self._execute()
+        assert self.state is not None
 
-            # Finalização com sucesso
-            assert self.state is not None  # segurança lógica
+        # Finalização normal
+        self.state.status = AgentStatus.COMPLETED
+        self.state.finished_at = datetime.now(timezone.utc)
 
-            self.state.status = AgentStatus.COMPLETED
-            self.state.finished_at = datetime.now(timezone.utc)
+        # -------------------------
+        # Persistência de memória
+        # -------------------------
 
-            return AgentResult(
-                output=f"Agent '{self.agent_id}' completed goal: {goal}",
+        record = {
+            "agent_id": self.agent_id,
+            "goal": self.state.goal,
+            "steps": self.state.steps,
+            "output": self.state.llm_output,
+            "status": self.state.status,
+            "started_at": self.state.started_at.isoformat(),
+            "finished_at": self.state.finished_at.isoformat(),
+        }
+
+        # Memória histórica (JSON)
+        self.memory_store.save(record)
+
+        # Memória semântica (vetorial)
+        if self.state.llm_output:
+            self.vector_store.add(
+                text=self.state.llm_output,
                 metadata={
+                    "goal": self.state.goal,
                     "agent_id": self.agent_id,
-                    "status": self.state.status,
-                    "steps": self.state.steps,
                 },
             )
 
-        except Exception as e:
-            assert self.state is not None
+        # -------------------------
+        # Resultado final
+        # -------------------------
 
-            self.state.status = AgentStatus.ERROR
-            self.state.finished_at = datetime.now(timezone.utc)
-
-            return AgentResult(
-                output=str(e),
-                metadata={
-                    "agent_id": self.agent_id,
-                    "status": self.state.status,
-                },
-            )
-
-
-     
+        return AgentResult(
+            output=self.state.llm_output or "Execution completed with fallback",
+            metadata={
+                "agent_id": self.agent_id,
+                "status": self.state.status,
+                "steps": self.state.steps,
+            },
+        )
