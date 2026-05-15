@@ -20,6 +20,7 @@ from nexus_os.core.runtime.redis_dead_letter_queue import RedisDeadLetterQueue
 
 from nexus_os.core.contracts.agent import AgentInput
 from nexus_os.core.timeline.builder import build_execution_timeline
+from nexus_os.core.metrics.builder import build_metrics
 
 # --------------------------------------------------
 # Config
@@ -196,7 +197,7 @@ def replay(trace_id: str):
     # ✅ extrair input/output
     input_data = None
     result_data = None
-
+    metrics = build_metrics(events)
     for event in events:
         if event["event_type"] == "agent.started":
             input_data = event.get("metadata", {})
@@ -207,6 +208,7 @@ def replay(trace_id: str):
     return {
         "trace_id": trace_id,
         "input": input_data,
+        "metrics": metrics,
         "timeline": timeline,
         "result": result_data,
     }
