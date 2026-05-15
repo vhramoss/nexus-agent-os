@@ -1,7 +1,7 @@
 import redis
 import json
 from typing import Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class RedisDeadLetterQueue:
@@ -10,8 +10,8 @@ class RedisDeadLetterQueue:
         self.key = key
 
     def push(self, record: Dict[str, Any]):
-        record["dlq_timestamp"] = datetime.utcnow().isoformat()
-        self.redis.json.dumps(self.key, str(record))
+        record["dlq_timestamp"] = datetime.now(timezone.utc).isoformat()
+        self.redis.rpush(self.key, json.dumps(record))
 
     def all(self):
         return [json.loads(x) for x in self.redis.lrange(self.key, 0, -1)]
