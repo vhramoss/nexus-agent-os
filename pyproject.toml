@@ -1,5 +1,5 @@
 [project]
-name = "aiproject"
+name = "nexus-agent-os"
 version = "0.1.0"
 description = ""
 authors = [
@@ -11,6 +11,7 @@ dependencies = [
     "fastapi (>=0.136.1,<0.137.0)",
     "uvicorn (>=0.46.0,<0.47.0)",
     "pydantic (>=2.11.9,<2.13)",
+    "pydantic_settings (>=2.11.9,<2.13)",
     "python-dotenv (>=1.2.2,<2.0.0)",
     "langgraph (>=1.1.10,<2.0.0)",
     "langchain (>=1.2.17,<2.0.0)",
