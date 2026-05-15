@@ -57,26 +57,30 @@ class NexusAgent:
     # Execução pública
     # -----------------------------------------------------
     def run(self, input: AgentInput) -> AgentOutput:
-        goal = input.goal
-        
-        # Inicializa estado
-        self.state = initialize_state(self, goal)
+        try:
+            goal = input.goal
 
-        # Lifecycle start
-        self.telemetry.agent_started(self.trace_id, goal)
+            self.state = initialize_state(self, goal)
 
-        # Execução do grafo
-        execute_graph(self)
+            self.telemetry.agent_started(self.trace_id, goal)
 
-        # Persistência
-        persist_memory(self)
+            execute_graph(self)
 
-        # Lifecycle end
-        self.telemetry.agent_completed(self.trace_id, self.state.status)
+            persist_memory(self)
 
-        # Retorno padronizado
-        return AgentOutput(
-            result=self.state.llm_output,
-            steps=self.state.steps,
-            status=self.state.status,
-        )
+            self.telemetry.agent_completed(self.trace_id, self.state.status)
+
+            return AgentOutput(
+                result=self.state.llm_output,
+                steps=self.state.steps,
+                status=self.state.status,
+            )
+
+        except Exception as e:
+            import traceback
+
+            return AgentOutput(
+                result=f"ERROR: {str(e)}\n{traceback.format_exc()}",
+                steps=[],
+                status="failed",
+            )

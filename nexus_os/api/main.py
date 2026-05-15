@@ -31,14 +31,12 @@ EXECUTION_TIMEOUT = int(os.getenv("NEXUS_EXEC_TIMEOUT", "10"))
 USE_REDIS = os.getenv("NEXUS_USE_REDIS", "false").lower() == "true"
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 
-
 # --------------------------------------------------
 # App
 # --------------------------------------------------
 
 class RunRequest(BaseModel):
     goal: str
-
 
 app = FastAPI(
     title="Nexus OS API",
@@ -50,25 +48,18 @@ app = FastAPI(
 # Runtime wiring
 # --------------------------------------------------
 
-# ✅ CPU-bound isolation
 process_pool = ProcessPoolExecutor(max_workers=MAX_CONCURRENT)
-
-# ✅ Supervisor
 supervisor = Supervisor()
 
-# ✅ Runtime selection (LOCAL vs DISTRIBUTED)
 if USE_REDIS:
     queue_gate = RedisQueueGate(
         redis_url=REDIS_URL,
         max_concurrent=MAX_CONCURRENT,
     )
-    dead_letter_queue = RedisDeadLetterQueue(
-        redis_url=REDIS_URL
-    )
+    dead_letter_queue = RedisDeadLetterQueue(redis_url=REDIS_URL)
 else:
     queue_gate = QueueGate(max_concurrent=MAX_CONCURRENT)
     dead_letter_queue = DeadLetterQueue()
-
 
 # --------------------------------------------------
 # Health
@@ -81,7 +72,6 @@ def health():
         "mode": "redis" if USE_REDIS else "local",
         "max_concurrent": MAX_CONCURRENT,
     }
-
 
 # --------------------------------------------------
 # Run task
@@ -108,6 +98,11 @@ async def run_task(request: RunRequest):
                     timeout=EXECUTION_TIMEOUT
                 )
 
+                # ✅ DEBUG: MOSTRAR ERRO DO AGENT
+                if result.status == "failed":
+                    print("AGENT FAILED:")
+                    print(result.result)
+
                 return {
                     "output": result.result,
                     "agent_status": result.status,
@@ -115,33 +110,46 @@ async def run_task(request: RunRequest):
                 }
 
             except TimeoutError:
+                print("TIMEOUT DETECTED")
+
                 decision = supervisor.decide({
                     "reason": "timeout",
                     "attempts": attempts,
                 })
 
             except Exception as e:
+                print("MAIN EXCEPTION:", e)
+
                 decision = supervisor.decide({
                     "reason": "exception",
                     "attempts": attempts,
                     "error": str(e),
                 })
 
+            # --------------------------------------------------
+            # RETRY
+            # --------------------------------------------------
             if decision == "retry":
+                print("RETRY TRIGGERED")
 
                 agent.telemetry.retry(agent.trace_id, attempts)
                 attempts += 1
                 continue
 
+            # --------------------------------------------------
+            # DLQ / FALLBACK
+            # --------------------------------------------------
             if decision == "dlq":
-               
-                agent.telemetry.fallback(agent.trace_id, "dlq") 
-        
+                print("FALLBACK TO DLQ")
+
+                agent.telemetry.fallback(agent.trace_id, "dlq")
+
                 dead_letter_queue.push({
                     "trace_id": agent.trace_id,
                     "goal": request.goal,
                     "reason": decision,
                 })
+
                 raise HTTPException(
                     status_code=500,
                     detail="Execution sent to dead-letter queue"
@@ -155,7 +163,6 @@ async def run_task(request: RunRequest):
     finally:
         queue_gate.release(agent.trace_id)
 
-
 # --------------------------------------------------
 # DLQ inspection
 # --------------------------------------------------
@@ -165,7 +172,6 @@ def get_dlq():
     return {
         "items": dead_letter_queue.all()
     }
-
 
 # --------------------------------------------------
 # Replay
@@ -184,7 +190,7 @@ def replay(trace_id: str):
             events.append(json.loads(line))
 
     timeline = build_execution_timeline(events)
-    
+
     return {
         "trace_id": trace_id,
         "timeline": timeline,

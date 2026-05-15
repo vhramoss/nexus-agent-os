@@ -4,9 +4,9 @@ from nexus_os.core.security.capabilities import CapabilitySet
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from nexus_os.core.observability.tracer import Tracer
-    from nexus_os.core.observability.event_bus import EventBus
+
+from nexus_os.core.observability.tracer import Tracer
+from nexus_os.core.observability.event_bus import EventBus
 
 
 
