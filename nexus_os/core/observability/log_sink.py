@@ -1,6 +1,8 @@
-def print_event(event: dict):
-    event_type = event.get("type", "unknown")
-    payload = event.get("payload", {})
-    trace_id = payload.get("trace_id", "n/a")
-
-    print(f"[EVENT] {event_type} | trace_id={trace_id} | payload={payload}")
+def print_event(event: dict):    
+    print(
+            f"[{event['event_type']}] "
+            f"{event['component']} "
+            f"{event['status']} | "
+            f"trace_id={event['trace_id']} "
+            f"{event.get('metadata', {})}"
+        )

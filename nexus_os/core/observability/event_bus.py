@@ -1,5 +1,5 @@
 from typing import Callable, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 
@@ -11,12 +11,7 @@ class EventBus:
         self.subscribers.setdefault(event_type, []).append(callback)
 
     def publish(self, event_type: str, payload: Dict[str, Any]):
-        event = {
-            "id": str(uuid.uuid4()),
-            "type": event_type,
-            "timestamp": datetime.utcnow().isoformat(),
-            "payload": payload,
-        }
+        event = self._build_event(event_type, payload)
 
         # Subscribers específicos
         for callback in self.subscribers.get(event_type, []):
@@ -25,3 +20,14 @@ class EventBus:
         # Subscribers globais (*)
         for callback in self.subscribers.get("*", []):
             callback(event)
+    
+    def _build_event(self, event_type: str, payload: Dict [str, Any]):
+        return {
+            "id": str(uuid.uuid4()),
+            "trace_id": payload.get("trace_id"),
+            "event_type": event_type,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "component": payload.get("component","unknown"),
+            "status": payload.get("status", "unknown"),
+            "metadata": payload.get("metadata",{}),
+        }

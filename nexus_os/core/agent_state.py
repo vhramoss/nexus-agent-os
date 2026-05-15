@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Literal
 from nexus_os.core.security.capabilities import CapabilitySet
 
 
@@ -7,7 +7,7 @@ from nexus_os.core.security.capabilities import CapabilitySet
 class AgentState:
     # já existentes
     goal: str
-    status: Any = None
+    status: Literal["created", "running", "completed", "failed"]
     steps: List[str] = field(default_factory=list)
 
     # decisão
