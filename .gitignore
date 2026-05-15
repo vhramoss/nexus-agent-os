@@ -18,5 +18,6 @@ __pycache__/
 .DS_Store
 
 # Poetry (opcional, mas recomendado não versionar neste estágio)
-poetry.lockmemory.json
+poetry.lock
+memory.json
 events/

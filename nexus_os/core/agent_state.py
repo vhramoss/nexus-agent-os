@@ -30,7 +30,7 @@ class AgentState:
     # planner
     planner_retries: int = 0
     planner_failed: bool = False
-    plan: Optional[Dict[str, Any]] = None
+    plan: Optional[Dict[str, Any]] = field(default_factory=dict)
 
     # executor
     executor_retries: int = 0
