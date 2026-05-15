@@ -19,6 +19,7 @@ from nexus_os.core.runtime.redis_queue_gate import RedisQueueGate
 from nexus_os.core.runtime.redis_dead_letter_queue import RedisDeadLetterQueue
 
 from nexus_os.core.contracts.agent import AgentInput
+from nexus_os.core.timeline.builder import build_execution_timeline
 
 # --------------------------------------------------
 # Config
@@ -128,29 +129,13 @@ async def run_task(request: RunRequest):
 
             if decision == "retry":
 
-                agent.event_bus.publish(
-                            "retry.triggered",
-                            {
-                                "trace_id": agent.trace_id,
-                                "component": "runtime",
-                                "status": "retrying",
-                                "metadata": {"attempt": attempts},
-                            },
-                )
+                agent.telemetry.retry(agent.trace_id, attempts)
                 attempts += 1
                 continue
 
             if decision == "dlq":
                
-                agent.event_bus.publish(
-                    "fallback.executed",
-                    {
-                        "trace_id": agent.trace_id,
-                        "component": "runtime",
-                        "status": "fallback",
-                        "metadata": {"reason": "dlq"},
-                    },
-                )
+                agent.telemetry.fallback(agent.trace_id, "dlq") 
         
                 dead_letter_queue.push({
                     "trace_id": agent.trace_id,
@@ -198,4 +183,9 @@ def replay(trace_id: str):
         for line in f:
             events.append(json.loads(line))
 
-    return events
+    timeline = build_execution_timeline(events)
+    
+    return {
+        "trace_id": trace_id,
+        "timeline": timeline,
+    }

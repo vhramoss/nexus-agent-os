@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import uuid
 
 from nexus_os.core.observability.event_bus import EventBus
@@ -12,27 +12,31 @@ from nexus_os.core.memory.vector_store import VectorStore
 from nexus_os.core.agents.orchestrator.state import initialize_state
 from nexus_os.core.agents.orchestrator.executor import execute_graph
 from nexus_os.core.agents.orchestrator.persistence import persist_memory
-from nexus_os.core.agents.orchestrator.lifecycle import emit_agent_started, emit_agent_completed
-from nexus_os.core.contracts.agent import AgentInput, AgentOutput
 
-class AgentResult:
-    def __init__(self, output: str, metadata: Dict[str, Any]):
-        self.output = output
-        self.metadata = metadata
+from nexus_os.core.contracts.agent import AgentInput, AgentOutput
+from nexus_os.core.telemetry.telemetry import Telemetry
 
 
 class NexusAgent:
+
     def __init__(self, agent_id: str):
         self.agent_id = agent_id
-        self.state = None
+        self.state: Optional[Any] = None
 
+        # -----------------------------
         # Observability
+        # -----------------------------
         self.event_bus = EventBus()
         self.trace_id = str(uuid.uuid4())
         self.tracer = Tracer(self.event_bus, trace_id=self.trace_id)
         self.event_store = EventStore()
 
+        # ✅ Telemetry 
+        self.telemetry = Telemetry(self.event_bus)
+
+        # -----------------------------
         # Subscribers
+        # -----------------------------
         self.event_bus.subscribe("agent.started", print_event)
         self.event_bus.subscribe("node.started", print_event)
         self.event_bus.subscribe("node.completed", print_event)
@@ -40,26 +44,37 @@ class NexusAgent:
         self.event_bus.subscribe("fallback.executed", print_event)
         self.event_bus.subscribe("agent.completed", print_event)
 
+        # ✅ Persistência de eventos
         self.event_bus.subscribe("*", self.event_store.persist)
 
+        # -----------------------------
         # Memory
+        # -----------------------------
         self.memory_store = MemoryStore()
         self.vector_store = VectorStore()
 
+    # -----------------------------------------------------
+    # Execução pública
+    # -----------------------------------------------------
     def run(self, input: AgentInput) -> AgentOutput:
         goal = input.goal
-
+        
+        # Inicializa estado
         self.state = initialize_state(self, goal)
 
-        emit_agent_started(self, goal)
+        # Lifecycle start
+        self.telemetry.agent_started(self.trace_id, goal)
 
+        # Execução do grafo
         execute_graph(self)
 
+        # Persistência
         persist_memory(self)
 
-        emit_agent_completed(self)
+        # Lifecycle end
+        self.telemetry.agent_completed(self.trace_id, self.state.status)
 
-
+        # Retorno padronizado
         return AgentOutput(
             result=self.state.llm_output,
             steps=self.state.steps,
