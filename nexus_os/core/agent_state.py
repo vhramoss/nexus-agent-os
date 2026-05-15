@@ -2,12 +2,19 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Literal
 from nexus_os.core.security.capabilities import CapabilitySet
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from nexus_os.core.observability.tracer import Tracer
+    from nexus_os.core.observability.event_bus import EventBus
+
+
 
 @dataclass
 class AgentState:
     # já existentes
     goal: str
-    status: Literal["created", "running", "completed", "failed"]
+    status: Literal["created", "running", "completed", "failed"] = "created"
     steps: List[str] = field(default_factory=list)
 
     # decisão
@@ -28,7 +35,7 @@ class AgentState:
     # executor
     executor_retries: int = 0
     executor_failed: bool = False
-    execution_result: List[str] = field(default_factory=list)
+    execution_result: List[Dict[str, Any]] = field(default_factory=list)
 
     # analyst
     analysis: Optional[str] = None
@@ -46,8 +53,8 @@ class AgentState:
     # -----------------
     # Observability 
     # -----------------
-    tracer: Optional[Any] = None
-    event_bus: Optional[Any] = None
+    tracer: Optional["Tracer"] = None
+    event_bus: Optional["EventBus"] = None
 
     #Security
     capabilities: Optional[CapabilitySet] = None

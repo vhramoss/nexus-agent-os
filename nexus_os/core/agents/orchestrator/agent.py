@@ -9,11 +9,11 @@ from nexus_os.core.observability.log_sink import print_event
 from nexus_os.core.memory.memory_store import MemoryStore
 from nexus_os.core.memory.vector_store import VectorStore
 
-from nexus_os.core.agent.state import initialize_state
-from nexus_os.core.agent.executor import execute_graph
-from nexus_os.core.agent.persistence import persist_memory
-from nexus_os.core.agent.lifecycle import emit_agent_started, emit_agent_completed
-
+from nexus_os.core.agents.orchestrator.state import initialize_state
+from nexus_os.core.agents.orchestrator.executor import execute_graph
+from nexus_os.core.agents.orchestrator.persistence import persist_memory
+from nexus_os.core.agents.orchestrator.lifecycle import emit_agent_started, emit_agent_completed
+from nexus_os.core.contracts.agent import AgentInput, AgentOutput
 
 class AgentResult:
     def __init__(self, output: str, metadata: Dict[str, Any]):
@@ -46,7 +46,9 @@ class NexusAgent:
         self.memory_store = MemoryStore()
         self.vector_store = VectorStore()
 
-    def run(self, goal: str) -> AgentResult:
+    def run(self, input: AgentInput) -> AgentOutput:
+        goal = input.goal
+
         self.state = initialize_state(self, goal)
 
         emit_agent_started(self, goal)
@@ -57,11 +59,9 @@ class NexusAgent:
 
         emit_agent_completed(self)
 
-        return AgentResult(
-            output=self.state.llm_output or "Execution completed with fallback",
-            metadata={
-                "agent_id": self.agent_id,
-                "status": self.state.status,
-                "steps": self.state.steps,
-            },
+
+        return AgentOutput(
+            result=self.state.llm_output,
+            steps=self.state.steps,
+            status=self.state.status,
         )

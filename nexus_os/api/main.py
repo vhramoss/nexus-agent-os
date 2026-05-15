@@ -18,6 +18,7 @@ from nexus_os.core.runtime.supervisor import Supervisor
 from nexus_os.core.runtime.redis_queue_gate import RedisQueueGate
 from nexus_os.core.runtime.redis_dead_letter_queue import RedisDeadLetterQueue
 
+from nexus_os.core.contracts.agent import AgentInput
 
 # --------------------------------------------------
 # Config
@@ -101,14 +102,15 @@ async def run_task(request: RunRequest):
                     loop.run_in_executor(
                         process_pool,
                         agent.run,
-                        request.goal
+                        AgentInput(goal=request.goal),
                     ),
                     timeout=EXECUTION_TIMEOUT
                 )
 
                 return {
-                    "output": result.output,
-                    "status": result.metadata,
+                    "output": result.result,
+                    "agent_status": result.status,
+                    "steps": result.steps,
                 }
 
             except TimeoutError:
