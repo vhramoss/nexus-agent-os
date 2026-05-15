@@ -1,8 +1,4 @@
-Perfeito 👊 — segue o README **completo, limpo e pronto pra copiar e colar direto**:
 
-***
-
-````markdown
 # 🧠 Nexus Agent OS
 
 > A structured runtime and observability platform for AI agents.
