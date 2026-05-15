@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from typing import Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class EventStore:
@@ -15,8 +15,8 @@ class EventStore:
         self.base_path.mkdir(exist_ok=True)
 
     def persist(self, event: Dict[str, Any]):
-        trace_id = event.get("payload", {}).get("trace_id", "unknown")
-        timestamp = datetime.utcnow().isoformat()
+        trace_id = event.get("trace_id", "unknown")
+        timestamp = datetime.now(timezone.utc).isoformat()
 
         file_path = self.base_path / f"{trace_id}.jsonl"
 

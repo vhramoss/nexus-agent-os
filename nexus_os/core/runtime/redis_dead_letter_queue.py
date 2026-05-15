@@ -1,4 +1,5 @@
 import redis
+import json
 from typing import Dict, Any
 from datetime import datetime
 
@@ -10,7 +11,7 @@ class RedisDeadLetterQueue:
 
     def push(self, record: Dict[str, Any]):
         record["dlq_timestamp"] = datetime.utcnow().isoformat()
-        self.redis.rpush(self.key, str(record))
+        self.redis.json.dumps(self.key, str(record))
 
     def all(self):
-        return [eval(x) for x in self.redis.lrange(self.key, 0, -1)]
+        return [json.loads(x) for x in self.redis.lrange(self.key, 0, -1)]
