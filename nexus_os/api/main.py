@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import json
 
-from nexus_os.core.nexus_agent import NexusAgent
+from nexus_os.core.agents.orchestrator.agent import NexusAgent
 
 # Runtime (local)
 from nexus_os.core.runtime.queue_gate import QueueGate
@@ -125,10 +125,31 @@ async def run_task(request: RunRequest):
                 })
 
             if decision == "retry":
+
+                agent.event_bus.publish(
+                            "retry.triggered",
+                            {
+                                "trace_id": agent.trace_id,
+                                "component": "runtime",
+                                "status": "retrying",
+                                "metadata": {"attempt": attempts},
+                            },
+                )
                 attempts += 1
                 continue
 
             if decision == "dlq":
+               
+                agent.event_bus.publish(
+                    "fallback.executed",
+                    {
+                        "trace_id": agent.trace_id,
+                        "component": "runtime",
+                        "status": "fallback",
+                        "metadata": {"reason": "dlq"},
+                    },
+                )
+        
                 dead_letter_queue.push({
                     "trace_id": agent.trace_id,
                     "goal": request.goal,
