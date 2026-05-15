@@ -7,7 +7,22 @@ def planner_agent_node(state: AgentState) -> AgentState:
     with tracer.span("planner"):
         state.steps.append("Planner agent")
 
-        if state.planner_retries < state.max_retries:
+        try:
+            # ✅ SIMULAÇÃO DE GERAÇÃO DE PLANO (substituir por LLM depois)
+            if not state.goal:
+                raise ValueError("Empty goal")
+
+            state.plan = {
+                "steps": [
+                    f"Analyze goal: {state.goal}",
+                    "Decompose tasks",
+                    "Prepare execution plan",
+                ]
+            }
+
+            state.planner_failed = False
+
+        except Exception as e:
             state.planner_retries += 1
             state.planner_failed = True
 
@@ -15,20 +30,12 @@ def planner_agent_node(state: AgentState) -> AgentState:
                 "retry.triggered",
                 {
                     "trace_id": tracer.trace_id,
-                    "node": "planner",
-                    "attempt": state.planner_retries,
+                    "component": "planner",
+                    "status": "retrying",
+                    "metadata": {"attempt": state.planner_retries},
                 },
             )
 
             return state
-
-        state.planner_failed = False
-        state.plan = {
-            "steps": [
-                f"Analyze goal: {state.goal}",
-                "Decompose tasks",
-                "Prepare execution plan",
-            ]
-        }
 
     return state
