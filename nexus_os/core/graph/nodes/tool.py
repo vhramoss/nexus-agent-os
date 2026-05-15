@@ -3,7 +3,7 @@ from nexus_os.core.security.guarded import guarded
 from nexus_os.core.security.capabilities import Capability
 
 def tool_agent_node(state: AgentState) -> AgentState:
-    tool_agent_node = guarded(tool_agent_node, Capability.CALL_TOOL)
+    
     tracer = state.tracer
 
     with tracer.span("tool"):
@@ -15,3 +15,5 @@ def tool_agent_node(state: AgentState) -> AgentState:
         }
 
     return state
+
+tool_agent_node = guarded(tool_agent_node, Capability.CALL_TOOL)
