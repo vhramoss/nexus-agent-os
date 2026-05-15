@@ -184,14 +184,29 @@ def replay(trace_id: str):
     if not path.exists():
         return {"error": "trace not found"}
 
+    # ✅ carregar eventos
     events = []
     with path.open() as f:
         for line in f:
             events.append(json.loads(line))
 
+    # ✅ construir timeline
     timeline = build_execution_timeline(events)
+
+    # ✅ extrair input/output
+    input_data = None
+    result_data = None
+
+    for event in events:
+        if event["event_type"] == "agent.started":
+            input_data = event.get("metadata", {})
+
+        if event["event_type"] == "agent.completed":
+            result_data = event.get("metadata", {})
 
     return {
         "trace_id": trace_id,
+        "input": input_data,
         "timeline": timeline,
+        "result": result_data,
     }
