@@ -1,79 +1,113 @@
+Perfeito 👊 — segue o README **completo, limpo e pronto pra copiar e colar direto**:
+
+***
+
+````markdown
 # 🧠 Nexus Agent OS
 
-> A structured runtime and observability layer for AI agents built with LangGraph, FastAPI, and RAG.
+> A structured runtime and observability platform for AI agents.
+
+Nexus Agent OS is a modular execution system designed to run, monitor, and inspect AI agents with full traceability — inspired by production-grade agent runtimes.
 
 ---
 
-## 📌 Overview
+## 🚀 Why this project?
 
-Nexus Agent OS is a modular execution runtime for AI agents designed to provide:
+Most AI agent projects focus on prompt → response.
 
-- ✅ Deterministic execution flow (LangGraph)
-- ✅ Full observability (Event Bus + Telemetry + Timeline)
-- ✅ Retry and failure handling (Supervisor + DLQ)
-- ✅ Execution replay and traceability
-- ✅ Metrics extraction for runtime analysis
+This project focuses on:
 
-Unlike typical agent projects focused on prompt execution, this project focuses on **agent orchestration, execution modeling, and observability**.
+- ✅ Execution architecture
+- ✅ Observability and tracing
+- ✅ Replay and debugging
+- ✅ Runtime control (retry, fallback, DLQ)
 
 ---
 
 ## 🧱 Architecture
 
 ```text
-API (FastAPI)
-   ↓
+FastAPI (API Layer)
+        │
+        ▼
 Runtime Layer
-   - Queue
-   - Timeout
-   - Supervisor (retry / dlq)
-   ↓
-Agent (NexusAgent)
-   ↓
-Execution Graph (LangGraph)
-   ↓
+  - Queue Gate
+  - Timeout Control
+  - Supervisor (retry / DLQ)
+        │
+        ▼
+NexusAgent (Orchestrator)
+        │
+        ▼
+LangGraph Execution Graph
+        │
+        ▼
 Telemetry → EventBus → EventStore
-   ↓
+        │
+        ▼
 Replay / Timeline / Metrics
+````
 
-🔄 Execution Flow
+***
 
-1. User sends goal
-2. Agent initializes state
-3. Memory recall (semantic + episodic)
-4. Planner decides next steps
-5. Graph executes nodes
-6. Results are stored and indexed
-7. Events are emitted and persisted
-8. Metrics and timeline reconstructed
+## 🔄 Execution Flow
 
-📊 Observability Features
+1.  Client sends a goal to `/run`
+2.  Agent initializes state
+3.  Routing decision (direct LLM vs planner)
+4.  Planner generates execution plan
+5.  Graph executes nodes step-by-step
+6.  Memory is persisted (structured + vector)
+7.  Events are emitted and stored
+8.  Replay reconstructs timeline + metrics
 
-✅ Event System
-Every action emits structured events:
+***
 
-agent.started
-node.started
-node.completed
-retry.triggered
-fallback.executed
-agent.completed
-✅ Timeline
-Replay execution step-by-step:
+## 📊 Observability
+
+### ✅ Event System
+
+Structured events:
+
+*   `agent.started`
+*   `node.started`
+*   `node.completed`
+*   `retry.triggered`
+*   `fallback.executed`
+*   `agent.completed`
+
+***
+
+### ✅ Execution Timeline
+
+```json
 {
   "component": "planner",
   "status": "completed",
-  "duration_ms": 42
+  "metadata": {
+    "duration_ms": 42
+  }
 }
-✅ Metrics
-Extracted from events:
+```
+
+***
+
+### ✅ Metrics
+
+```json
 {
   "total_duration_ms": 128,
-  "node_count": 3,
+  "node_count": 4,
   "retry_count": 1,
   "failure": false
 }
-✅ Replay (Full Execution Trace)
+```
+
+***
+
+### ✅ Replay (Full Trace)
+
+```json
 {
   "trace_id": "...",
   "input": {...},
@@ -81,57 +115,110 @@ Extracted from events:
   "timeline": [...],
   "result": {...}
 }
+```
 
-🧠 Memory System
+***
 
-Episodic memory (execution history)
-Semantic memory (FAISS + embeddings)
-Vector similarity search
-Future support for persistent index
+## 🧠 Agent Design
 
-⚙️ Stack
+State-driven execution:
 
-FastAPI
-LangGraph
-LangChain
-CrewAI
-Sentence Transformers
-FAISS
-Redis (optional)
-Python 3.11+
+    initialize → memory → routing → planner → executor → analyst → reviewer
 
-🚀 Running the Project
+Features:
 
-1. Setup
+*   deterministic execution flow
+*   observable state transitions
+*   retry-aware planning
+*   failure isolation (DLQ)
+
+***
+
+## 🛠 Tech Stack
+
+*   FastAPI
+*   LangGraph
+*   LangChain
+*   CrewAI (future multi-agent support)
+*   Sentence Transformers
+*   FAISS
+*   Redis (optional)
+*   Python 3.11+
+
+***
+
+## ⚙️ Running the Project
+
+### Setup
+
+```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install .
+```
 
-2. Start API
+***
+
+### Start API
+
+```bash
 uvicorn nexus_os.api.main:app
+```
 
-3. Run agent
+***
+
+### Run Agent
+
+```bash
 curl -X POST http://127.0.0.1:8000/run \
   -H "Content-Type: application/json" \
-  -d '{"goal":"example task"}'
+  -d '{"goal":"analyze system architecture"}'
+```
 
-4. Inspect execution
+***
+
+### Inspect Execution
+
+```bash
 curl http://127.0.0.1:8000/replay/<trace_id>
+```
 
-🧪 Current Status
-✅ Runtime completed
-✅ Observability implemented
-✅ Metrics extraction implemented
-⚠️ Planner stability under improvement
-⚠️ Memory system refinement ongoing
+***
 
-📍 Future Improvements
+## 🧪 Current Status
 
-Structured ToolExecution contracts
-Persistent vector index
-Real-time metrics dashboard
-Multi-agent coordination improvements
-Workflow visualization UI
+✅ Runtime stable  
+✅ Planner logic fixed  
+✅ Observability implemented  
+✅ Replay + metrics available  
+⚠️ LLM integration mocked  
+⚠️ Tool execution in progress
 
-👤 Author
+***
+
+## 📍 Roadmap
+
+*   Real LLM integration
+*   ToolExecution contracts
+*   Persistent vector storage
+*   Advanced metrics (p95, node latency)
+*   Timeline visualization UI
+*   Multi-agent coordination
+
+***
+
+## 👤 Author
+
 Victor Hugo Ramos
+
+***
+
+## 📌 Notes
+
+This project focuses on agent execution as a system:
+
+*   observable
+*   debuggable
+*   controllable
+*   extensible
+
