@@ -4,7 +4,6 @@ from nexus_os.api.main import app
 
 
 def test_dlq_endpoint_returns_items():
-
     client = TestClient(app)
 
     response = client.get("/dlq")

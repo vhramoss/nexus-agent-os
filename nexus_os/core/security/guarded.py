@@ -11,7 +11,6 @@ def guarded(capability):
     """
 
     def decorator(fn):
-
         if inspect.iscoroutinefunction(fn):
 
             @wraps(fn)

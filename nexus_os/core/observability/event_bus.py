@@ -9,7 +9,6 @@ class EventBus:
         self.subscribers: dict[str, list[Subscriber]] = {}
 
     def subscribe(self, event_type: str, callback: Subscriber) -> None:
-
         self.subscribers.setdefault(event_type, []).append(callback)
 
     def publish(self, event_type: str, payload: EventPayload) -> None:
