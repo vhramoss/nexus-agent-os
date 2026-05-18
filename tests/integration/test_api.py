@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+
 from nexus_os.api.main import app
 
 client = TestClient(app)
@@ -10,6 +11,7 @@ def test_health_endpoint_returns_200():
 
     # Assert
     assert response.status_code == 200
+
 
 def test_run_endpoint_accepts_valid_goal():
     # Arrange
@@ -25,6 +27,7 @@ def test_run_endpoint_accepts_valid_goal():
 
     assert "trace_id" in data
 
+
 def test_run_endpoint_rejects_empty_goal():
     # Arrange
     payload = {"goal": ""}
@@ -35,12 +38,14 @@ def test_run_endpoint_rejects_empty_goal():
     # Assert
     assert response.status_code == 400 or response.status_code == 422
 
+
 def test_replay_returns_404_for_unknown_trace():
     # Act
     response = client.get("/replay/does-not-exist")
 
     # Assert
     assert response.status_code == 404
+
 
 def test_run_then_replay_returns_events():
     # Arrange

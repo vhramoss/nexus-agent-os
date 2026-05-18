@@ -1,8 +1,8 @@
-from typing import List, Dict, Any
 from datetime import datetime
+from typing import Any
 
 
-def build_metrics(events: List[Dict[str, Any]]) -> Dict[str, Any]:
+def build_metrics(events: list[dict[str, Any]]) -> dict[str, Any]:
     if not events:
         return {}
 

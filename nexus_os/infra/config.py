@@ -1,10 +1,10 @@
 from functools import lru_cache
-from pydantic_settings import BaseSettings
+
 from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-
     env: str = Field(
         default="local",
         description="Ambiente de execução: local, staging ou prod",

@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any
 
 
 class Supervisor:
@@ -7,7 +7,7 @@ class Supervisor:
     Em produção, isso pode evoluir para árvores ou LLMs.
     """
 
-    def decide(self, context: Dict[str, Any]) -> str:
+    def decide(self, context: dict[str, Any]) -> str:
         """
         Retorna uma decisão:
         - 'retry'

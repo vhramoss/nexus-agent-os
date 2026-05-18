@@ -1,6 +1,6 @@
-from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
+from sentence_transformers import SentenceTransformer
 
 # Singleton por processo (CRÍTICO)
 _model = None
@@ -27,23 +27,13 @@ class VectorStore:
             self.index = faiss.IndexFlatL2(len(embedding[0]))
 
         self.index.add(np.array(embedding))
-        self.texts.append({
-            "text": text,
-            "metadata": metadata or {}
-        })
+        self.texts.append({"text": text, "metadata": metadata or {}})
 
     def search(self, query: str, k: int = 3):
         if self.index is None or not self.texts:
             return []
 
         query_embedding = self.model.encode([query])
-        distances, indices = self.index.search(
-            np.array(query_embedding),
-            k
-        )
+        distances, indices = self.index.search(np.array(query_embedding), k)
 
-        return [
-            self.texts[i]
-            for i in indices[0]
-            if i < len(self.texts)
-        ]
+        return [self.texts[i] for i in indices[0] if i < len(self.texts)]

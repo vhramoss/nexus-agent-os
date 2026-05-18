@@ -1,7 +1,7 @@
 from nexus_os.core.agent_state import AgentState
-from nexus_os.core.security.guarded import guarded
-from nexus_os.core.security.capabilities import Capability
 from nexus_os.core.observability.decorators import traced_node
+from nexus_os.core.security.capabilities import Capability
+from nexus_os.core.security.guarded import guarded
 
 
 def build_response(goal: str, context: str, analysis: str, tool_result: str) -> str:
@@ -25,11 +25,11 @@ def llm_node(state: AgentState) -> AgentState:
     analysis = state.analysis or "No analysis available"
     tool_result = state.tool_result or "No tool execution"
 
-    context = "\n".join(
-        r.get("text", "")
-        for r in state.semantic_recall
-        if r.get("text")
-    ) if state.semantic_recall else ""
+    context = (
+        "\n".join(r.get("text", "") for r in state.semantic_recall if r.get("text"))
+        if state.semantic_recall
+        else ""
+    )
 
     state.llm_output = build_response(
         state.goal,

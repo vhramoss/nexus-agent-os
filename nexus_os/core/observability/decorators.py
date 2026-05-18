@@ -13,4 +13,5 @@ def traced_node(name: str):
                 return fn(state, *args, **kwargs)
 
         return wrapper
+
     return decorator

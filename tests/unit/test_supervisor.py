@@ -16,6 +16,7 @@ def test_supervisor_returns_dlq_when_reason_is_timeout():
     # Assert
     assert result == "dlq"
 
+
 def test_supervisor_returns_retry_on_first_exception():
     # Arrange
     supervisor = Supervisor()
@@ -30,6 +31,7 @@ def test_supervisor_returns_retry_on_first_exception():
 
     # Assert
     assert result == "retry"
+
 
 def test_supervisor_returns_dlq_after_max_retries():
     # Arrange

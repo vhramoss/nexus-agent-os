@@ -1,6 +1,7 @@
 import asyncio
+
 import redis.asyncio as redis
-from typing import Optional
+
 from nexus_os.core.observability.event_bus import EventBus
 
 
@@ -14,7 +15,7 @@ class RedisQueueGate:
         redis_url: str,
         key: str = "nexus:queue",
         max_concurrent: int = 3,
-        event_bus: Optional[EventBus] = None,
+        event_bus: EventBus | None = None,
     ):
         self.redis = redis.from_url(redis_url)
         self.key = key

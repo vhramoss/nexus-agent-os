@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException
+
+from nexus_os.core.metrics.builder import build_metrics
 from nexus_os.core.observability.event_store import EventStore
 from nexus_os.core.timeline.builder import build_execution_timeline
-from nexus_os.core.metrics.builder import build_metrics
 
 router = APIRouter()
 event_store = EventStore()

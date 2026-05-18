@@ -1,6 +1,7 @@
 import pytest
-from nexus_os.core.security.guarded import guarded
+
 from nexus_os.core.security.capabilities import Capability, CapabilitySet
+from nexus_os.core.security.guarded import guarded
 from nexus_os.core.security.sandbox import SandboxViolation
 
 

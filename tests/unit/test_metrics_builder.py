@@ -11,6 +11,7 @@ def test_build_metrics_returns_empty_when_no_events():
     # Assert
     assert metrics == {}
 
+
 def test_build_metrics_counts_nodes_and_retries():
     # Arrange
     events = [
@@ -34,6 +35,7 @@ def test_build_metrics_counts_nodes_and_retries():
     # Assert
     assert metrics["node_count"] == 2
     assert metrics["retry_count"] == 1
+
 
 def test_build_metrics_detects_failure():
     # Arrange

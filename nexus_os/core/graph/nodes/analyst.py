@@ -6,9 +6,6 @@ from nexus_os.core.observability.decorators import traced_node
 def analyst_agent_node(state: AgentState) -> AgentState:
     state.steps.append("Analyst agent")
 
-    state.analysis = (
-        "Analysis of execution:\n"
-        + "\n".join(state.execution_result)
-    )
+    state.analysis = "Analysis of execution:\n" + "\n".join(state.execution_result)
 
     return state

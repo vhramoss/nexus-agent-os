@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from nexus_os.services.execution_service import get_dlq_items
 
 router = APIRouter()
@@ -6,7 +7,4 @@ router = APIRouter()
 
 @router.get("/dlq")
 def get_dlq():
-    return {
-        "items": get_dlq_items()
-    }
-
+    return {"items": get_dlq_items()}

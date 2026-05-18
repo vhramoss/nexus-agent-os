@@ -1,27 +1,23 @@
-from typing import Any, Dict, Optional
 import uuid
+from typing import Any
 
-from nexus_os.core.observability.event_bus import EventBus
-from nexus_os.core.observability.tracer import Tracer
-from nexus_os.core.observability.event_store import EventStore
-from nexus_os.core.observability.log_sink import print_event
-
-from nexus_os.core.memory.memory_store import MemoryStore
-from nexus_os.core.memory.vector_store import VectorStore
-
-from nexus_os.core.agents.orchestrator.state import initialize_state
 from nexus_os.core.agents.orchestrator.executor import execute_graph
 from nexus_os.core.agents.orchestrator.persistence import persist_memory
-
+from nexus_os.core.agents.orchestrator.state import initialize_state
 from nexus_os.core.contracts.agent import AgentInput, AgentOutput
+from nexus_os.core.memory.memory_store import MemoryStore
+from nexus_os.core.memory.vector_store import VectorStore
+from nexus_os.core.observability.event_bus import EventBus
+from nexus_os.core.observability.event_store import EventStore
+from nexus_os.core.observability.log_sink import print_event
+from nexus_os.core.observability.tracer import Tracer
 from nexus_os.core.telemetry.telemetry import Telemetry
 
 
 class NexusAgent:
-
     def __init__(self, agent_id: str):
         self.agent_id = agent_id
-        self.state: Optional[Any] = None
+        self.state: Any | None = None
 
         # -----------------------------
         # Observability
@@ -31,7 +27,7 @@ class NexusAgent:
         self.tracer = Tracer(self.event_bus, trace_id=self.trace_id)
         self.event_store = EventStore()
 
-        # ✅ Telemetry 
+        # ✅ Telemetry
         self.telemetry = Telemetry(self.event_bus)
 
         # -----------------------------

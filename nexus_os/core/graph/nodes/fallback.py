@@ -18,9 +18,6 @@ def fallback_node(state: AgentState) -> AgentState:
         },
     )
 
-    state.llm_output = (
-        "[GLOBAL FALLBACK]\n"
-        "Execution completed via fallback."
-    )
+    state.llm_output = "[GLOBAL FALLBACK]\nExecution completed via fallback."
 
     return state

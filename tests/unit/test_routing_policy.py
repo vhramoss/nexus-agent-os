@@ -13,6 +13,7 @@ def test_routing_returns_planner_when_no_semantic_recall():
     # Assert
     assert result == "plan"
 
+
 def test_routing_returns_llm_when_semantic_recall_has_results():
     # Arrange
     state = type("State", (), {})()

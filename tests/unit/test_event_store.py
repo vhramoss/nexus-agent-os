@@ -17,6 +17,7 @@ def test_event_store_creates_file(tmp_path):
     files = list(tmp_path.iterdir())
     assert len(files) == 1
 
+
 def test_event_store_appends_events(tmp_path):
     store = EventStore(storage_dir=str(tmp_path))
 
@@ -32,6 +33,7 @@ def test_event_store_appends_events(tmp_path):
 
     assert len(lines) == 2
 
+
 def test_event_store_reads_events(tmp_path):
     store = EventStore(storage_dir=str(tmp_path))
 
@@ -43,4 +45,3 @@ def test_event_store_reads_events(tmp_path):
 
     assert len(events) == 1
     assert events[0]["event_type"] == "test"
-

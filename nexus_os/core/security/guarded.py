@@ -1,10 +1,10 @@
 import inspect
 from functools import wraps
-from nexus_os.core.security.sandbox import enforce, SandboxViolation
+
+from nexus_os.core.security.sandbox import SandboxViolation, enforce
 
 
 def guarded(capability):
-
     """
     Decorator factory for enforcing capabilities on agent nodes.
     Supports both sync and async functions.
@@ -19,13 +19,12 @@ def guarded(capability):
                 try:
                     enforce(state.capabilities, capability)
                 except SandboxViolation as e:
-                    raise SandboxViolation(
-                        f"{fn.__name__}: {str(e)}"
-                    ) from e
-                
+                    raise SandboxViolation(f"{fn.__name__}: {str(e)}") from e
+
                 return await fn(state, *args, **kwargs)
+
             return async_wrapper
-        
+
         else:
 
             @wraps(fn)
@@ -33,11 +32,10 @@ def guarded(capability):
                 try:
                     enforce(state.capabilities, capability)
                 except SandboxViolation as e:
-                    raise SandboxViolation(
-                        f"{fn.__name__}: {str(e)}"
-                    ) from e
-                
+                    raise SandboxViolation(f"{fn.__name__}: {str(e)}") from e
+
                 return fn(state, *args, **kwargs)
+
             return sync_wrapper
-        
+
     return decorator

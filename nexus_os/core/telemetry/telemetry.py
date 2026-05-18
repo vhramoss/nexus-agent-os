@@ -1,9 +1,8 @@
-from typing import Dict, Any
 from nexus_os.core.observability.event_bus import EventBus
 
 
 class Telemetry:
-    def __init__(self, event_bus:EventBus):
+    def __init__(self, event_bus: EventBus):
         self.event_bus = event_bus
 
     # ------------------------

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from nexus_os.api.routes import run, replay, health, dlq
+
+from nexus_os.api.routes import dlq, health, replay, run
 
 app = FastAPI()
 

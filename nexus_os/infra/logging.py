@@ -1,5 +1,6 @@
-import structlog
 import logging
+
+import structlog
 
 logging.basicConfig(
     level=logging.INFO,

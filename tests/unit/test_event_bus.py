@@ -17,6 +17,7 @@ def test_event_bus_calls_subscriber_on_publish():
     # Assert
     assert len(received) == 1
 
+
 def test_event_bus_calls_global_subscriber():
     # Arrange
     bus = EventBus()
@@ -32,6 +33,7 @@ def test_event_bus_calls_global_subscriber():
 
     # Assert
     assert len(received) == 1
+
 
 def test_event_bus_isolates_subscriber_errors():
     # Arrange
@@ -52,6 +54,7 @@ def test_event_bus_isolates_subscriber_errors():
 
     # Assert
     assert len(received) == 1
+
 
 def test_event_bus_builds_event_with_expected_keys():
     # Arrange

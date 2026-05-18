@@ -1,16 +1,19 @@
 from contextlib import contextmanager
 from time import perf_counter
-from typing import Dict, Any, Optional
+from typing import Any
+
 from nexus_os.core.observability.event_bus import EventBus
+
 
 class Tracer:
     event_bus: EventBus
+
     def __init__(self, event_bus, trace_id: str):
         self.event_bus = event_bus
         self.trace_id = trace_id
 
     @contextmanager
-    def span(self, name: str, extra: Dict[str, Any] | None = None):
+    def span(self, name: str, extra: dict[str, Any] | None = None):
         start = perf_counter()
 
         self.event_bus.publish(
@@ -48,6 +51,6 @@ class Tracer:
                         "trace_id": self.trace_id,
                         "component": name,
                         "status": "completed",
-                        "metadata":{"duration_ms": duration},
+                        "metadata": {"duration_ms": duration},
                     },
                 )

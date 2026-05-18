@@ -11,6 +11,7 @@ def test_dlq_starts_empty():
     # Assert
     assert items == []
 
+
 def test_dlq_push_adds_record():
     # Arrange
     dlq = DeadLetterQueue()
@@ -22,6 +23,7 @@ def test_dlq_push_adds_record():
 
     # Assert
     assert len(items) == 1
+
 
 def test_dlq_preserves_order():
     # Arrange
@@ -36,6 +38,7 @@ def test_dlq_preserves_order():
     # Assert
     assert items[0]["trace_id"] == "1"
     assert items[1]["trace_id"] == "2"
+
 
 def test_dlq_push_adds_timestamp():
     # Arrange

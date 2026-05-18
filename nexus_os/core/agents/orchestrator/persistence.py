@@ -1,5 +1,5 @@
-from nexus_os.core.security.sandbox import enforce
 from nexus_os.core.security.capabilities import Capability
+from nexus_os.core.security.sandbox import enforce
 
 
 def persist_memory(agent):

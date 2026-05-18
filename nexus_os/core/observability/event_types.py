@@ -1,4 +1,6 @@
-from typing import Callable, Dict, Any, TypedDict
+from collections.abc import Callable
+from typing import Any, TypedDict
+
 
 class Event(TypedDict):
     id: str
@@ -7,12 +9,14 @@ class Event(TypedDict):
     timestamp: str
     component: str
     status: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
+
 
 Subscriber = Callable[[Event], None]
+
 
 class EventPayload(TypedDict, total=False):
     trace_id: str
     component: str
     status: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]

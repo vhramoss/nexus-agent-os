@@ -1,17 +1,17 @@
 import asyncio
-from concurrent.futures import ProcessPoolExecutor
-from asyncio import TimeoutError
+import builtins
 import os
+from concurrent.futures import ProcessPoolExecutor
 
 from fastapi import HTTPException
 
 from nexus_os.core.agents.orchestrator.agent import NexusAgent
-from nexus_os.core.runtime.queue_gate import QueueGate
-from nexus_os.core.runtime.dead_letter_queue import DeadLetterQueue
-from nexus_os.core.runtime.supervisor import Supervisor
-from nexus_os.core.runtime.redis_queue_gate import RedisQueueGate
-from nexus_os.core.runtime.redis_dead_letter_queue import RedisDeadLetterQueue
 from nexus_os.core.contracts.agent import AgentInput
+from nexus_os.core.runtime.dead_letter_queue import DeadLetterQueue
+from nexus_os.core.runtime.queue_gate import QueueGate
+from nexus_os.core.runtime.redis_dead_letter_queue import RedisDeadLetterQueue
+from nexus_os.core.runtime.redis_queue_gate import RedisQueueGate
+from nexus_os.core.runtime.supervisor import Supervisor
 
 # --------------------------------------------------
 # Config
@@ -41,6 +41,7 @@ else:
 # --------------------------------------------------
 # Execution
 # --------------------------------------------------
+
 
 async def run_agent(goal: str):
     if not goal.strip():
@@ -72,29 +73,35 @@ async def run_agent(goal: str):
                     "steps": result.steps,
                 }
 
-            except TimeoutError:
-                decision = supervisor.decide({
-                    "reason": "timeout",
-                    "attempts": attempts,
-                })
+            except builtins.TimeoutError:
+                decision = supervisor.decide(
+                    {
+                        "reason": "timeout",
+                        "attempts": attempts,
+                    }
+                )
 
             except Exception as e:
-                decision = supervisor.decide({
-                    "reason": "exception",
-                    "attempts": attempts,
-                    "error": str(e),
-                })
+                decision = supervisor.decide(
+                    {
+                        "reason": "exception",
+                        "attempts": attempts,
+                        "error": str(e),
+                    }
+                )
 
             if decision == "retry":
                 attempts += 1
                 continue
 
             if decision == "dlq":
-                dead_letter_queue.push({
-                    "trace_id": agent.trace_id,
-                    "goal": goal,
-                    "reason": decision,
-                })
+                dead_letter_queue.push(
+                    {
+                        "trace_id": agent.trace_id,
+                        "goal": goal,
+                        "reason": decision,
+                    }
+                )
 
                 raise HTTPException(
                     status_code=500,

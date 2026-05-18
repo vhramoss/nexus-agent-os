@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Any
+
 
 @dataclass
 class ToolExecution:
     name: str
-    input: Dict[str, Any]
-    output: Dict[str, Any]
-    
+    input: dict[str, Any]
+    output: dict[str, Any]

@@ -1,6 +1,8 @@
+import os
+
 from nexus_os.core.agent_state import AgentState
 from nexus_os.core.observability.decorators import traced_node
-import os
+
 
 @traced_node("executor")
 def executor_agent_node(state: AgentState) -> AgentState:
@@ -25,8 +27,6 @@ def executor_agent_node(state: AgentState) -> AgentState:
         return state
 
     state.executor_failed = False
-    state.execution_result = [
-        f"Executed: {step}" for step in state.plan.get("steps", [])
-    ]
+    state.execution_result = [f"Executed: {step}" for step in state.plan.get("steps", [])]
 
     return state

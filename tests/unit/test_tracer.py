@@ -1,6 +1,8 @@
-from nexus_os.core.observability.tracer import Tracer
-from nexus_os.core.observability.event_bus import EventBus
 import pytest
+
+from nexus_os.core.observability.event_bus import EventBus
+from nexus_os.core.observability.tracer import Tracer
+
 
 def test_tracer_publishes_node_started_and_completed():
     # Arrange
@@ -48,6 +50,7 @@ def test_tracer_publishes_node_failed_on_exception():
     assert "node.started" in event_types
     assert "node.failed" in event_types
 
+
 def test_tracer_records_duration_on_completed():
     # Arrange
     bus = EventBus()
@@ -65,12 +68,11 @@ def test_tracer_records_duration_on_completed():
         pass
 
     # Assert
-    completed_events = [
-        e for e in events if e["event_type"] == "node.completed"
-    ]
+    completed_events = [e for e in events if e["event_type"] == "node.completed"]
 
     assert len(completed_events) == 1
     assert "duration_ms" in completed_events[0]["metadata"]
+
 
 def test_tracer_reraises_exception_after_logging():
     # Arrange

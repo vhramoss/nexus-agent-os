@@ -11,6 +11,7 @@ def test_build_timeline_returns_empty_when_no_events():
     # Assert
     assert timeline == []
 
+
 def test_build_timeline_returns_non_empty_when_events_exist():
     # Arrange
     events = [
@@ -35,6 +36,7 @@ def test_build_timeline_returns_non_empty_when_events_exist():
 
     # Assert
     assert len(timeline) > 0
+
 
 def test_build_timeline_contains_expected_keys():
     # Arrange

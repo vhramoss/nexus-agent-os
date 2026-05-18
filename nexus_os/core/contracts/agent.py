@@ -1,15 +1,16 @@
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 
 @dataclass
 class AgentInput:
     goal: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+
 
 @dataclass
 class AgentOutput:
-    result: Optional[str]
-    steps: List[str]
+    result: str | None
+    steps: list[str]
     status: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    
+    metadata: dict[str, Any] = field(default_factory=dict)

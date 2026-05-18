@@ -1,7 +1,7 @@
 from nexus_os.core.agent_state import AgentState
-from nexus_os.core.security.guarded import guarded
-from nexus_os.core.security.capabilities import Capability
 from nexus_os.core.observability.decorators import traced_node
+from nexus_os.core.security.capabilities import Capability
+from nexus_os.core.security.guarded import guarded
 
 
 def execute_tool(goal: str) -> dict:

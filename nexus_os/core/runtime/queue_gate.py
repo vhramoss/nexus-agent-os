@@ -1,10 +1,10 @@
 import asyncio
-from typing import Optional
+
 from nexus_os.core.observability.event_bus import EventBus
 
 
 class QueueGate:
-    def __init__(self, max_concurrent: int, event_bus: Optional[EventBus] = None):
+    def __init__(self, max_concurrent: int, event_bus: EventBus | None = None):
         self.semaphore = asyncio.Semaphore(max_concurrent)
         self.max_concurrent = max_concurrent
         self.event_bus = event_bus

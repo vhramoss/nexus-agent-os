@@ -1,6 +1,3 @@
-from typing import Set
-
-
 class Capability:
     READ_MEMORY = "read_memory"
     WRITE_MEMORY = "write_memory"
@@ -9,8 +6,9 @@ class Capability:
     NETWORK = "network"
     USE_TOOL = "use_tool"
 
+
 class CapabilitySet:
-    def __init__(self, allowed: Set[str]):
+    def __init__(self, allowed: set[str]):
         self.allowed = allowed
 
     def allows(self, capability: str) -> bool:

@@ -1,15 +1,14 @@
-from nexus_os.core.graph.nodes.planner import planner_agent_node
-from nexus_os.core.graph.nodes.fallback import fallback_node
-from nexus_os.core.graph.nodes.reviewer import reviewer_agent_node
 from nexus_os.core.agent_state import AgentState
-
-from nexus_os.core.observability.tracer import Tracer
+from nexus_os.core.graph.nodes.fallback import fallback_node
+from nexus_os.core.graph.nodes.planner import planner_agent_node
+from nexus_os.core.graph.nodes.reviewer import reviewer_agent_node
 from nexus_os.core.observability.event_bus import EventBus
-
+from nexus_os.core.observability.tracer import Tracer
 
 # --------------------------------------------------
 # Helper
 # --------------------------------------------------
+
 
 def make_state(goal="test"):
     state = AgentState(goal=goal)
@@ -25,6 +24,7 @@ def make_state(goal="test"):
 # --------------------------------------------------
 # Planner
 # --------------------------------------------------
+
 
 def test_planner_creates_plan():
     state = make_state("test goal")
@@ -48,6 +48,7 @@ def test_planner_handles_empty_goal():
 # Fallback
 # --------------------------------------------------
 
+
 def test_fallback_sets_output():
     state = make_state("test")
 
@@ -60,6 +61,7 @@ def test_fallback_sets_output():
 # --------------------------------------------------
 # Reviewer
 # --------------------------------------------------
+
 
 def test_reviewer_detects_error():
     state = make_state("test")
