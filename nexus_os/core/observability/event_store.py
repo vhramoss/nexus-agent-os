@@ -1,20 +1,15 @@
 import json
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 from datetime import datetime, timezone
 
 
 class EventStore:
-    """
-    Event store simples baseado em append-only JSON.
-    Em produção isso vira DB / Kafka / S3.
-    """
+    def __init__(self, storage_dir: str = "events"):
+        self.base_path = Path(storage_dir)
+        self.base_path.mkdir(parents=True, exist_ok=True)
 
-    def __init__(self, path: str = "events"):
-        self.base_path = Path(path)
-        self.base_path.mkdir(exist_ok=True)
-
-    def persist(self, event: Dict[str, Any]):
+    def append(self, event: Dict[str, Any]) -> None:
         trace_id = event.get("trace_id", "unknown")
         timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -25,3 +20,17 @@ class EventStore:
                 "timestamp": timestamp,
                 **event
             }) + "\n")
+
+    def get_events(self, trace_id: str) -> List[Dict[str, Any]]:
+        file_path = self.base_path / f"{trace_id}.jsonl"
+
+        if not file_path.exists():
+            return []
+
+        events = []
+
+        with file_path.open("r") as f:
+            for line in f:
+                events.append(json.loads(line))
+
+        return events
