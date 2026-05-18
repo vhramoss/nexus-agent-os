@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    container_name: nexus-api
+    ports:
+      - "8000:8000"
+    environment:
+      NEXUS_USE_REDIS: "true"
+      REDIS_URL: "redis://redis:6379"
+      NEXUS_MAX_CONCURRENT: "3"
+      NEXUS_EXEC_TIMEOUT: "10"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: nexus-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
