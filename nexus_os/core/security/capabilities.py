@@ -7,7 +7,7 @@ class Capability:
     CALL_TOOL = "call_tool"
     USE_LLM = "use_llm"
     NETWORK = "network"
-
+    USE_TOOL = "use_tool"
 
 class CapabilitySet:
     def __init__(self, allowed: Set[str]):

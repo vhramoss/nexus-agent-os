@@ -16,10 +16,11 @@ class EventStore:
         file_path = self.base_path / f"{trace_id}.jsonl"
 
         with file_path.open("a") as f:
-            f.write(json.dumps({
-                "timestamp": timestamp,
-                **event
-            }) + "\n")
+            data = {**event}
+            if "timestamp" not in data:
+                data["timestamp"] = timestamp
+
+            f.write(json.dumps(data) + "\n")
 
     def get_events(self, trace_id: str) -> List[Dict[str, Any]]:
         file_path = self.base_path / f"{trace_id}.jsonl"
@@ -29,8 +30,14 @@ class EventStore:
 
         events = []
 
-        with file_path.open("r") as f:
+        with file_path.open("r", encoding="utf-8") as f:
             for line in f:
                 events.append(json.loads(line))
 
         return events
+
+                
+    def persist(self, event: Dict[str, Any]) -> None:
+        self.append(event)
+
+    

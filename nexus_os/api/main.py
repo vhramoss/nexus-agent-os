@@ -4,8 +4,6 @@ import asyncio
 from concurrent.futures import ProcessPoolExecutor
 from asyncio import TimeoutError
 import os
-from pathlib import Path
-import json
 
 from nexus_os.core.agents.orchestrator.agent import NexusAgent
 
@@ -18,6 +16,10 @@ from nexus_os.core.runtime.supervisor import Supervisor
 from nexus_os.core.runtime.redis_queue_gate import RedisQueueGate
 from nexus_os.core.runtime.redis_dead_letter_queue import RedisDeadLetterQueue
 
+# Observability
+from nexus_os.core.observability.event_store import EventStore
+
+# Contracts + builders
 from nexus_os.core.contracts.agent import AgentInput
 from nexus_os.core.timeline.builder import build_execution_timeline
 from nexus_os.core.metrics.builder import build_metrics
@@ -39,6 +41,7 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 class RunRequest(BaseModel):
     goal: str
 
+
 app = FastAPI(
     title="Nexus OS API",
     description="Agent Operating System as a Service API",
@@ -51,6 +54,7 @@ app = FastAPI(
 
 process_pool = ProcessPoolExecutor(max_workers=MAX_CONCURRENT)
 supervisor = Supervisor()
+event_store = EventStore()
 
 if USE_REDIS:
     queue_gate = RedisQueueGate(
@@ -80,6 +84,10 @@ def health():
 
 @app.post("/run")
 async def run_task(request: RunRequest):
+    # ✅ validação importante pra passar nos testes
+    if not request.goal.strip():
+        raise HTTPException(status_code=400, detail="Goal cannot be empty")
+
     agent = NexusAgent(agent_id="agent_1")
     attempts = 0
 
@@ -96,31 +104,29 @@ async def run_task(request: RunRequest):
                         agent.run,
                         AgentInput(goal=request.goal),
                     ),
-                    timeout=EXECUTION_TIMEOUT
+                    timeout=EXECUTION_TIMEOUT,
                 )
 
-                # ✅ DEBUG: MOSTRAR ERRO DO AGENT
-                if result.status == "failed":
-                    print("AGENT FAILED:")
-                    print(result.result)
-
                 return {
+                    "trace_id": agent.trace_id,  # ✅ FIX IMPORTANTE
                     "output": result.result,
                     "agent_status": result.status,
                     "steps": result.steps,
                 }
 
+            # --------------------------------------------------
+            # TIMEOUT
+            # --------------------------------------------------
             except TimeoutError:
-                print("TIMEOUT DETECTED")
-
                 decision = supervisor.decide({
                     "reason": "timeout",
                     "attempts": attempts,
                 })
 
+            # --------------------------------------------------
+            # EXCEPTION
+            # --------------------------------------------------
             except Exception as e:
-                print("MAIN EXCEPTION:", e)
-
                 decision = supervisor.decide({
                     "reason": "exception",
                     "attempts": attempts,
@@ -131,9 +137,6 @@ async def run_task(request: RunRequest):
             # RETRY
             # --------------------------------------------------
             if decision == "retry":
-                print("RETRY TRIGGERED")
-
-                agent.telemetry.retry(agent.trace_id, attempts)
                 attempts += 1
                 continue
 
@@ -141,10 +144,6 @@ async def run_task(request: RunRequest):
             # DLQ / FALLBACK
             # --------------------------------------------------
             if decision == "dlq":
-                print("FALLBACK TO DLQ")
-
-                agent.telemetry.fallback(agent.trace_id, "dlq")
-
                 dead_letter_queue.push({
                     "trace_id": agent.trace_id,
                     "goal": request.goal,
@@ -153,12 +152,15 @@ async def run_task(request: RunRequest):
 
                 raise HTTPException(
                     status_code=500,
-                    detail="Execution sent to dead-letter queue"
+                    detail="Execution sent to dead-letter queue",
                 )
 
+            # --------------------------------------------------
+            # ABORT
+            # --------------------------------------------------
             raise HTTPException(
                 status_code=500,
-                detail="Execution aborted by supervisor"
+                detail="Execution aborted by supervisor",
             )
 
     finally:
@@ -180,24 +182,18 @@ def get_dlq():
 
 @app.get("/replay/{trace_id}")
 def replay(trace_id: str):
-    path = Path("events") / f"{trace_id}.jsonl"
+    events = event_store.get_events(trace_id)
 
-    if not path.exists():
-        return {"error": "trace not found"}
+    # ✅ comportamento correto REST
+    if not events:
+        raise HTTPException(status_code=404, detail="Trace not found")
 
-    # ✅ carregar eventos
-    events = []
-    with path.open() as f:
-        for line in f:
-            events.append(json.loads(line))
-
-    # ✅ construir timeline
     timeline = build_execution_timeline(events)
+    metrics = build_metrics(events)
 
-    # ✅ extrair input/output
     input_data = None
     result_data = None
-    metrics = build_metrics(events)
+
     for event in events:
         if event["event_type"] == "agent.started":
             input_data = event.get("metadata", {})
