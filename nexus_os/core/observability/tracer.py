@@ -1,9 +1,10 @@
 from contextlib import contextmanager
 from time import perf_counter
 from typing import Dict, Any, Optional
-
+from nexus_os.core.observability.event_bus import EventBus
 
 class Tracer:
+    event_bus: EventBus
     def __init__(self, event_bus, trace_id: str):
         self.event_bus = event_bus
         self.trace_id = trace_id
