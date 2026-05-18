@@ -21,3 +21,6 @@ __pycache__/
 poetry.lock
 memory.json
 events/
+
+.coverage
+htmlcov/
