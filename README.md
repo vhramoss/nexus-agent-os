@@ -181,14 +181,13 @@ curl http://127.0.0.1:8000/replay/<trace_id>
 
 ***
 
-## 🧪 Current Status
+## 🧪 Tests
 
-✅ Runtime stable  
-✅ Planner logic fixed  
-✅ Observability implemented  
-✅ Replay + metrics available  
-⚠️ LLM integration mocked  
-⚠️ Tool execution in progress
+```bash
+python -m pytest
+python -m pytest --cov=nexus_os
+python -m pytest -m unit
+python -m pytest -m integration
 
 ***
 
