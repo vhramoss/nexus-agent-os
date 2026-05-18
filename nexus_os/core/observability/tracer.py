@@ -10,7 +10,7 @@ class Tracer:
         self.trace_id = trace_id
 
     @contextmanager
-    def span(self, name: str, extra: Optional[Dict[str, Any]] | None = None):
+    def span(self, name: str, extra: Dict[str, Any] | None = None):
         start = perf_counter()
 
         self.event_bus.publish(

@@ -1,15 +1,15 @@
 from nexus_os.core.agent_state import AgentState
 from nexus_os.core.observability.decorators import traced_node
-
+import os
 
 @traced_node("executor")
 def executor_agent_node(state: AgentState) -> AgentState:
     tracer = state.tracer
     event_bus = tracer.event_bus
-
+    simulate = os.getenv("NEXUS_SIMULATE_EXECUTOR_FAILURE", "false").lower() == "true"
     state.steps.append("Executor agent")
 
-    if state.executor_retries < state.max_retries:
+    if simulate and state.executor_retries < state.max_retries:
         state.executor_retries += 1
         state.executor_failed = True
 
