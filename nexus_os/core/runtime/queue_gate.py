@@ -26,18 +26,20 @@ class QueueGate:
                 "agent.dequeued",
                 {
                     "trace_id": trace_id,
-                    "current_slots": self.semaphore._value,
+                    "current_slots": max(0, self.max_concurrent - self.semaphore._value),
                 },
             )
 
-    def release(self, trace_id: str):
-        self.semaphore.release()
+    async def release(self, trace_id: str):
+        # evita overflow
+        if self.semaphore._value < self.max_concurrent:
+            self.semaphore.release()
 
         if self.event_bus:
             self.event_bus.publish(
                 "agent.released",
                 {
                     "trace_id": trace_id,
-                    "current_slots": self.semaphore._value,
+                    "current_slots": max(0, self.max_concurrent - self.semaphore._value),
                 },
             )

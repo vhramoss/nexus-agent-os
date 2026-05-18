@@ -4,12 +4,23 @@ import redis.asyncio as redis
 
 from nexus_os.core.observability.event_bus import EventBus
 
+# -----------------------------
+# LUA SCRIPT (ATÔMICO)
+# -----------------------------
+ACQUIRE_LUA = """
+local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+local max = tonumber(ARGV[1])
+
+if current < max then
+    redis.call('INCR', KEYS[1])
+    return 1
+else
+    return 0
+end
+"""
+
 
 class RedisQueueGate:
-    """
-    QueueGate distribuído via Redis.
-    """
-
     def __init__(
         self,
         redis_url: str,
@@ -22,25 +33,38 @@ class RedisQueueGate:
         self.max_concurrent = max_concurrent
         self.event_bus = event_bus
 
-    async def acquire(self, trace_id: str):
-        while True:
-            current = await self.redis.get(self.key)
-            current = int(current or 0)
+        self._acquire_script = None
 
-            if current < self.max_concurrent:
-                await self.redis.incr(self.key)
+    async def _load_script(self):
+        if self._acquire_script is None:
+            self._acquire_script = self.redis.register_script(ACQUIRE_LUA)
+
+    async def acquire(self, trace_id: str):
+        await self._load_script()
+
+        while True:
+            acquired = await self._acquire_script(
+                keys=[self.key],
+                args=[self.max_concurrent],
+            )
+
+            if acquired == 1:
                 break
 
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.05)
 
         if self.event_bus:
             self.event_bus.publish(
                 "agent.dequeued",
-                {"trace_id": trace_id, "current": current + 1},
+                {"trace_id": trace_id},
             )
 
     async def release(self, trace_id: str):
-        await self.redis.decr(self.key)
+        current = await self.redis.decr(self.key)
+
+        # proteção contra underflow
+        if current < 0:
+            await self.redis.set(self.key, 0)
 
         if self.event_bus:
             self.event_bus.publish(

@@ -1,32 +1,37 @@
-from typing import Any
+from enum import Enum
+from typing import TypedDict
+
+
+class Decision(str, Enum):
+    RETRY = "retry"
+    DLQ = "dlq"
+    ABORT = "abort"
+
+
+class SupervisorContext(TypedDict, total=False):
+    reason: str
+    attempts: int
+    error: str
 
 
 class Supervisor:
     """
-    Supervisor simples baseado em regras.
-    Em produção, isso pode evoluir para árvores ou LLMs.
+    Supervisor baseado em regras determinísticas.
     """
 
-    def decide(self, context: dict[str, Any]) -> str:
-        """
-        Retorna uma decisão:
-        - 'retry'
-        - 'dlq'
-        - 'abort'
-        """
-
+    def decide(self, context: SupervisorContext) -> Decision:
         reason = context.get("reason")
         attempts = context.get("attempts", 0)
 
         # ⏱️ Timeout é falha definitiva
         if reason == "timeout":
-            return "dlq"
+            return Decision.DLQ
 
         # 💥 Exceção inesperada
         if reason == "exception":
             if attempts < 1:
-                return "retry"
-            return "dlq"
+                return Decision.RETRY
+            return Decision.DLQ
 
-        # ✅ Default seguro
-        return "abort"
+        # ✅ fallback seguro
+        return Decision.ABORT
