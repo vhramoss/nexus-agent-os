@@ -1,15 +1,14 @@
 from nexus_os.core.agent_state import AgentState
+from nexus_os.core.observability.decorators import traced_node
 
 
+@traced_node("analyst")
 def analyst_agent_node(state: AgentState) -> AgentState:
-    tracer = state.tracer
+    state.steps.append("Analyst agent")
 
-    with tracer.span("analyst"):
-        state.steps.append("Analyst agent")
-
-        state.analysis = (
-            "Analysis of execution:\n"
-            + "\n".join(state.execution_result)
-        )
+    state.analysis = (
+        "Analysis of execution:\n"
+        + "\n".join(state.execution_result)
+    )
 
     return state
