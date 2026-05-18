@@ -1,218 +1,207 @@
-
 # 🧠 Nexus Agent OS
 
-> A structured runtime and observability platform for AI agents.
-
-Nexus Agent OS is a modular execution system designed to run, monitor, and inspect AI agents with full traceability — inspired by production-grade agent runtimes.
+> A production-grade agent runtime system with distributed execution, observability, and fault tolerance.
 
 ---
 
-## 🚀 Why this project?
+## 🚀 Overview
 
-Most AI agent projects focus on prompt → response.
+Nexus Agent OS is a modular backend system designed to execute agent-based workflows with:
 
-This project focuses on:
-
-- ✅ Execution architecture
-- ✅ Observability and tracing
-- ✅ Replay and debugging
-- ✅ Runtime control (retry, fallback, DLQ)
+- ✅ Distributed execution with Redis
+- ✅ Fault tolerance (retry + dead letter queue)
+- ✅ Observability (event-based tracing + replay)
+- ✅ Strong test coverage (~74%)
+- ✅ Production-ready runtime and orchestration
 
 ---
 
-## 🧱 Architecture
+## 🏗️ Architecture
 
-```text
-FastAPI (API Layer)
-        │
-        ▼
-Runtime Layer
-  - Queue Gate
-  - Timeout Control
-  - Supervisor (retry / DLQ)
-        │
-        ▼
-NexusAgent (Orchestrator)
-        │
-        ▼
-LangGraph Execution Graph
-        │
-        ▼
-Telemetry → EventBus → EventStore
-        │
-        ▼
-Replay / Timeline / Metrics
+```
+
+API (FastAPI)
+↓
+Services (Execution layer)
+↓
+Runtime (QueueGate, Supervisor)
+↓
+Graph (Agent workflow)
+↓
+Core (Observability, Security, Memory)
+
+````
+
+---
+
+## ⚙️ Features
+
+### ✅ Runtime & Execution
+- Controlled concurrency (Semaphore + RedisQueueGate)
+- Atomic distributed locks using Redis + Lua scripts
+- Supervisor-based fault handling (retry / dlq / abort)
+- Dead Letter Queue (in-memory + Redis-backed)
+
+---
+
+### ✅ Observability
+- EventBus (publish/subscribe)
+- Tracer (execution lifecycle tracking)
+- EventStore (persisted events)
+- Replay endpoint for debugging executions
+
+---
+
+### ✅ Security
+- Capability-based execution control
+- `@guarded` decorator for runtime safety
+- Sandbox enforcement
+
+---
+
+### ✅ Reliability
+- Retry policies
+- DLQ handling
+- Timeout management
+- Deterministic supervisor decisions
+
+---
+
+### ✅ Configuration
+- Centralized settings via Pydantic (`Settings`)
+- Environment-aware (`.env`)
+- Type-safe configuration system
+
+---
+
+## 🧪 Testing
+
+- ✅ Unit tests for core logic
+- ✅ Integration tests for API
+- ✅ Runtime and observability tests
+- ✅ ~74% coverage
+
+Run tests:
+
+```bash
+pytest
 ````
 
 ***
 
-## 🔄 Execution Flow
+## 🐳 Running with Docker
 
-1.  Client sends a goal to `/run`
-2.  Agent initializes state
-3.  Routing decision (direct LLM vs planner)
-4.  Planner generates execution plan
-5.  Graph executes nodes step-by-step
-6.  Memory is persisted (structured + vector)
-7.  Events are emitted and stored
-8.  Replay reconstructs timeline + metrics
+### 🔹 Build & Run (single container)
+
+```bash
+docker build -t nexus-agent-os .
+docker run -p 8000:8000 nexus-agent-os
+```
 
 ***
 
-## 📊 Observability
+### 🔹 Full Stack (with Redis)
 
-### ✅ Event System
-
-Structured events:
-
-*   `agent.started`
-*   `node.started`
-*   `node.completed`
-*   `retry.triggered`
-*   `fallback.executed`
-*   `agent.completed`
+```bash
+docker compose up --build
+```
 
 ***
 
-### ✅ Execution Timeline
+### ✅ Health check
+
+```bash
+curl http://localhost:8000/health
+```
+
+Response:
 
 ```json
 {
-  "component": "planner",
-  "status": "completed",
-  "metadata": {
-    "duration_ms": 42
-  }
+  "filesystem": { "status": "ok" },
+  "redis": { "status": "ok" }
 }
 ```
 
 ***
 
-### ✅ Metrics
+## 📡 API Endpoints
 
-```json
-{
-  "total_duration_ms": 128,
-  "node_count": 4,
-  "retry_count": 1,
-  "failure": false
-}
-```
+### `/health`
 
-***
+System health status
 
-### ✅ Replay (Full Trace)
+### `/run`
 
-```json
-{
-  "trace_id": "...",
-  "input": {...},
-  "metrics": {...},
-  "timeline": [...],
-  "result": {...}
-}
-```
+Execute agent
+
+### `/replay`
+
+Replay execution timeline
+
+### `/dlq`
+
+Dead letter queue inspection
 
 ***
 
-## 🧠 Agent Design
+## 🧠 Key Engineering Concepts
 
-State-driven execution:
+This project demonstrates:
 
-    initialize → memory → routing → planner → executor → analyst → reviewer
-
-Features:
-
-*   deterministic execution flow
-*   observable state transitions
-*   retry-aware planning
-*   failure isolation (DLQ)
+* ✅ Distributed coordination (Redis)
+* ✅ Concurrency control (Semaphore + atomic Lua)
+* ✅ Fault-tolerant execution
+* ✅ Event-driven observability
+* ✅ Config-driven architecture
+* ✅ Testable system design
 
 ***
 
-## 🛠 Tech Stack
+## 📊 Project Maturity
 
-*   FastAPI
-*   LangGraph
-*   LangChain
-*   CrewAI (future multi-agent support)
-*   Sentence Transformers
-*   FAISS
-*   Redis (optional)
-*   Python 3.11+
-
-***
-
-## ⚙️ Running the Project
-
-### Setup
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install .
-```
+| Area          | Status                |
+| ------------- | --------------------- |
+| Architecture  | ✅ Production-ready    |
+| Tests         | ✅ Strong coverage     |
+| Observability | ✅ Complete            |
+| Security      | ✅ Enforced            |
+| Runtime       | ✅ Distributed-ready   |
+| CI/CD         | ✅ Implemented         |
+| Docker        | ✅ Fully containerized |
 
 ***
 
-### Start API
+## 🧩 Tech Stack
 
-```bash
-uvicorn nexus_os.api.main:app
-```
-
-***
-
-### Run Agent
-
-```bash
-curl -X POST http://127.0.0.1:8000/run \
-  -H "Content-Type: application/json" \
-  -d '{"goal":"analyze system architecture"}'
-```
+* FastAPI
+* Redis
+* LangGraph / LangChain / CrewAI
+* FAISS (vector search)
+* Pydantic / pydantic-settings
+* Pytest
+* Docker & Docker Compose
 
 ***
 
-### Inspect Execution
+## 📉 Known Limitations
 
-```bash
-curl http://127.0.0.1:8000/replay/<trace_id>
-```
-
-***
-
-## 🧪 Tests
-
-```bash
-python -m pytest
-python -m pytest --cov=nexus_os
-python -m pytest -m unit
-python -m pytest -m integration
+* No real LLM integration (mocked / local)
+* No persistent external DB (only file/redis-based)
+* No autoscaling (local environment)
 
 ***
 
-## 📍 Roadmap
+## 🚀 Future Improvements
 
-*   Real LLM integration
-*   ToolExecution contracts
-*   Persistent vector storage
-*   Advanced metrics (p95, node latency)
-*   Timeline visualization UI
-*   Multi-agent coordination
+* Cloud deployment (AWS / Fly.io / Render)
+* Real LLM provider integration
+* Metrics (Prometheus / OpenTelemetry)
+* Authentication layer
+* UI dashboard
 
 ***
 
 ## 👤 Author
 
 Victor Hugo Ramos
-
-***
-
-## 📌 Notes
-
-This project focuses on agent execution as a system:
-
-*   observable
-*   debuggable
-*   controllable
-*   extensible
