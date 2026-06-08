@@ -8,6 +8,7 @@ from fastapi import HTTPException
 
 from nexus_os.core.agents.orchestrator.agent import NexusAgent
 from nexus_os.core.contracts.agent import AgentInput
+from nexus_os.core.observability.event_bus import EventBus
 from nexus_os.core.runtime.dead_letter_queue import DeadLetterQueue
 from nexus_os.core.runtime.execution_context import ExecutionContext
 from nexus_os.core.runtime.execution_store import ExecutionStore
@@ -16,6 +17,8 @@ from nexus_os.core.runtime.redis_dead_letter_queue import RedisDeadLetterQueue
 from nexus_os.core.runtime.redis_queue_gate import RedisQueueGate
 from nexus_os.core.runtime.supervisor import Supervisor
 from nexus_os.core.runtime.user_queue_gate import UserQueueGate
+from nexus_os.core.workflow.executor import WorkflowExecutor
+from nexus_os.core.workflow.models import Step, Workflow
 from nexus_os.infra.config import get_settings
 
 # -----------------------------
@@ -38,7 +41,11 @@ supervisor = Supervisor()
 user_queue_gate = UserQueueGate(max_per_user=2)
 store = ExecutionStore()
 
-event_bus = None
+# ✅ EVENT BUS CORRETO
+event_bus = EventBus()
+
+# ✅ WORKFLOW EXECUTOR COM EVENT BUS
+workflow_executor = WorkflowExecutor(event_bus=event_bus)
 
 if use_redis:
     queue_gate = RedisQueueGate(redis_url=redis_url, max_concurrent=max_concurrent)
@@ -81,7 +88,6 @@ async def run_agent(goal: str, user_id: str = "default"):
         raise HTTPException(status_code=400, detail="Goal cannot be empty")
 
     execution_id = generate_execution_id(goal, user_id)
-
     lock = execution_locks.setdefault(execution_id, asyncio.Lock())
 
     async with lock:
@@ -92,7 +98,16 @@ async def run_agent(goal: str, user_id: str = "default"):
         agent = NexusAgent(agent_id="agent_1")
         context = ExecutionContext(trace_id=agent.trace_id)
 
-        # ✅ estado inicial correto
+        # ✅ EVENTO: START
+        event_bus.publish(
+            "execution.started",
+            {
+                "execution_id": execution_id,
+                "user_id": user_id,
+            },
+        )
+
+        # ✅ estado inicial
         store.save(
             execution_id,
             {
@@ -113,14 +128,30 @@ async def run_agent(goal: str, user_id: str = "default"):
         try:
             loop = asyncio.get_running_loop()
 
-            result = await asyncio.wait_for(
+            # ✅ REGISTRAR ACTIVITY
+            workflow_executor.register_activity(
+                "agent_run",
+                lambda ctx: agent.run(AgentInput(goal=goal)),
+            )
+
+            # ✅ WORKFLOW
+            workflow = Workflow(
+                steps=[
+                    Step("agent_run", "agent_run"),
+                ]
+            )
+
+            result_map = await asyncio.wait_for(
                 loop.run_in_executor(
                     process_pool,
-                    agent.run,
-                    AgentInput(goal=goal),
+                    workflow_executor.execute,
+                    workflow,
+                    execution_id,
                 ),
                 timeout=execution_timeout,
             )
+
+            result = result_map["agent_run"]
 
             context.finish("completed")
 
@@ -137,6 +168,16 @@ async def run_agent(goal: str, user_id: str = "default"):
             }
 
             store.save(execution_id, response)
+
+            # ✅ EVENTO: SUCCESS
+            event_bus.publish(
+                "execution.finished",
+                {
+                    "execution_id": execution_id,
+                    "duration": context.duration,
+                },
+            )
+
             return response
 
         except builtins.TimeoutError:
@@ -153,6 +194,15 @@ async def run_agent(goal: str, user_id: str = "default"):
 
             store.save(execution_id, record)
             dead_letter_queue.push(record)
+
+            # ✅ EVENTO: FAIL
+            event_bus.publish(
+                "execution.failed",
+                {
+                    "execution_id": execution_id,
+                    "reason": "timeout",
+                },
+            )
 
             raise HTTPException(
                 status_code=500,
@@ -173,6 +223,15 @@ async def run_agent(goal: str, user_id: str = "default"):
 
             store.save(execution_id, record)
             dead_letter_queue.push(record)
+
+            # ✅ EVENTO: FAIL
+            event_bus.publish(
+                "execution.failed",
+                {
+                    "execution_id": execution_id,
+                    "error": str(e),
+                },
+            )
 
             raise HTTPException(
                 status_code=500,

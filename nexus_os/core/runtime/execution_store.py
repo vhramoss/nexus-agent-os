@@ -29,3 +29,20 @@ class ExecutionStore:
         data = self._read()
         data[execution_id] = record
         self._write(data)
+
+    def save_step(self, execution_id: str, step_name: str, data: dict):
+        record = self.get(execution_id) or {}
+
+        steps = record.get("steps", {})
+        steps[step_name] = data
+
+        record["steps"] = steps
+
+        self.save(execution_id, record)
+
+    def get_steps(self, execution_id: str):
+        record = self.get(execution_id)
+        if not record:
+            return {}
+
+        return record.get("steps", {})
