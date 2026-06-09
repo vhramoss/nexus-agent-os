@@ -1,4 +1,4 @@
-from nexus_os.core.runtime.dead_letter_queue import DeadLetterQueue
+from nexus_os.runtime.resilience.dead_letter_queue import DeadLetterQueue
 
 
 def test_dlq_starts_empty():

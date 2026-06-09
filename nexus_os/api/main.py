@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from nexus_os.api.routes import dlq, health, replay, run
-from nexus_os.core.runtime.recovery import recovery_loop
+from nexus_os.runtime.resilience.recovery import recovery_loop
 
 
 # -----------------------------

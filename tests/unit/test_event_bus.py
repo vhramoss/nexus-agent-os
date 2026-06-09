@@ -1,4 +1,4 @@
-from nexus_os.core.observability.event_bus import EventBus
+from nexus_os.observability.event_bus import EventBus
 
 
 def test_event_bus_calls_subscriber_on_publish():

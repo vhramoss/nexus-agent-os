@@ -1,4 +1,4 @@
-from nexus_os.core.runtime.supervisor import Supervisor
+from nexus_os.runtime.control.supervisor import Supervisor
 
 
 def test_supervisor_returns_dlq_when_reason_is_timeout():

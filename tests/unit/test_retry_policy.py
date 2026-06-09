@@ -1,6 +1,6 @@
 import pytest
 
-from nexus_os.core.graph.policies.retry import retry_policy
+from nexus_os.domain.graph.policies.retry import retry_policy
 
 
 @pytest.mark.parametrize(

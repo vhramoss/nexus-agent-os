@@ -1,9 +1,9 @@
 from nexus_os.core.agent_state import AgentState
-from nexus_os.core.graph.nodes.fallback import fallback_node
-from nexus_os.core.graph.nodes.planner import planner_agent_node
-from nexus_os.core.graph.nodes.reviewer import reviewer_agent_node
-from nexus_os.core.observability.event_bus import EventBus
-from nexus_os.core.observability.tracer import Tracer
+from nexus_os.domain.graph.nodes.fallback import fallback_node
+from nexus_os.domain.graph.nodes.planner import planner_agent_node
+from nexus_os.domain.graph.nodes.reviewer import reviewer_agent_node
+from nexus_os.observability.event_bus import EventBus
+from nexus_os.observability.tracer import Tracer
 
 # --------------------------------------------------
 # Helper

@@ -1,4 +1,4 @@
-from nexus_os.core.graph.policies.routing import routing_policy
+from nexus_os.domain.graph.policies.routing import routing_policy
 
 
 def test_routing_returns_planner_when_no_semantic_recall():

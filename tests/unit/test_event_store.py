@@ -1,4 +1,4 @@
-from nexus_os.core.observability.event_store import EventStore
+from nexus_os.observability.event_store import EventStore
 
 
 def test_event_store_creates_file(tmp_path):

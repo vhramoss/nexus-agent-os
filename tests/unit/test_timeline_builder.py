@@ -1,4 +1,4 @@
-from nexus_os.core.timeline.builder import build_execution_timeline
+from nexus_os.state.timeline.builder import build_execution_timeline
 
 
 def test_build_timeline_returns_empty_when_no_events():

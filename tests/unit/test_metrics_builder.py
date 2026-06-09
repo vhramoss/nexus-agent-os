@@ -1,4 +1,4 @@
-from nexus_os.core.metrics.builder import build_metrics
+from nexus_os.observability.metrics.builder import build_metrics
 
 
 def test_build_metrics_returns_empty_when_no_events():

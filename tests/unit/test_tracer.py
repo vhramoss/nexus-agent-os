@@ -1,7 +1,7 @@
 import pytest
 
-from nexus_os.core.observability.event_bus import EventBus
-from nexus_os.core.observability.tracer import Tracer
+from nexus_os.observability.event_bus import EventBus
+from nexus_os.observability.tracer import Tracer
 
 
 def test_tracer_publishes_node_started_and_completed():
